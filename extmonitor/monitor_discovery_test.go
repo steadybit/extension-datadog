@@ -55,13 +55,14 @@ func TestIterateThroughMonitorsResponses(t *testing.T) {
 	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(2)).Return(page3, &okResponse, nil)
 
 	// When
-	monitors := GetAllMonitors(context.Background(), mockedApi)
+	monitors := GetAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
 
 	// Then
 	require.Len(t, monitors, 2)
 	require.Equal(t, "42", monitors[0].Id)
 	require.Equal(t, "Test-42", monitors[0].Label)
 	require.Equal(t, []string{"tagA", "tagB"}, monitors[0].Attributes["datadog.monitor.tags"])
+	require.Equal(t, []string{"https://app.datadoghq.eu/monitors/42"}, monitors[0].Attributes["steadybit.url"])
 	require.Equal(t, "69", monitors[1].Id)
 	require.Equal(t, "Test-69", monitors[1].Label)
 	require.Equal(t, []string{"tagB", "tagC"}, monitors[1].Attributes["datadog.monitor.tags"])
@@ -85,7 +86,7 @@ func TestErrorResponseReturnsIntermediateResult(t *testing.T) {
 	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(1)).Return([]datadogV1.Monitor{}, &okResponse, fmt.Errorf("Intentional Test error"))
 
 	// When
-	monitors := GetAllMonitors(context.Background(), mockedApi)
+	monitors := GetAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
 
 	// Then
 	require.Len(t, monitors, 1)

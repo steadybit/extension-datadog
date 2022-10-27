@@ -12,7 +12,8 @@ import (
 
 type Specification struct {
 	// see https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
-	Site           string `json:"site" split_words:"true" required:"true"`
+	SiteParameter  string `json:"site" split_words:"true" required:"true"`
+	SiteUrl        string `json:"site" split_words:"true" required:"true"`
 	ApiKey         string `json:"apiKey" split_words:"true" required:"true"`
 	ApplicationKey string `json:"applicationKey" split_words:"true" required:"true"`
 }
@@ -35,7 +36,7 @@ func (s *Specification) WrapContextWithDatadogContextValues(ctx context.Context)
 		ctx,
 		datadog.ContextServerVariables,
 		map[string]string{
-			"site": Config.Site,
+			"site": Config.SiteParameter,
 		},
 	)
 

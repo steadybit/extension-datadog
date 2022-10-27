@@ -5,6 +5,7 @@ package extmonitor
 
 import (
 	"context"
+	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
@@ -83,7 +84,7 @@ func getMonitorAttributeDescriptions() discovery_kit_api.AttributeDescriptions {
 }
 
 func getMonitorDiscoveryResults(w http.ResponseWriter, r *http.Request, _ []byte) {
-	targets := GetAllMonitors(r.Context(), &config.Config)
+	targets := GetAllMonitors(r.Context(), &config.Config, config.Config.SiteUrl)
 	exthttp.WriteBody(w, discovery_kit_api.DiscoveredTargets{Targets: targets})
 }
 
@@ -91,7 +92,7 @@ type ListMonitorsApi interface {
 	ListMonitors(ctx context.Context, params datadogV1.ListMonitorsOptionalParameters) ([]datadogV1.Monitor, *http.Response, error)
 }
 
-func GetAllMonitors(ctx context.Context, api ListMonitorsApi) []discovery_kit_api.Target {
+func GetAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []discovery_kit_api.Target {
 	result := make([]discovery_kit_api.Target, 0, 500)
 
 	parameters := datadogV1.NewListMonitorsOptionalParameters()
@@ -123,7 +124,7 @@ func GetAllMonitors(ctx context.Context, api ListMonitorsApi) []discovery_kit_ap
 		}
 
 		for _, monitor := range monitors {
-			result = append(result, toTarget(monitor))
+			result = append(result, toTarget(monitor, siteUrl))
 		}
 
 		parameters.Page = extutil.Ptr(*parameters.Page + 1)
@@ -132,12 +133,13 @@ func GetAllMonitors(ctx context.Context, api ListMonitorsApi) []discovery_kit_ap
 	return result
 }
 
-func toTarget(monitor datadogV1.Monitor) discovery_kit_api.Target {
+func toTarget(monitor datadogV1.Monitor, siteUrl string) discovery_kit_api.Target {
 	id := strconv.FormatInt(*monitor.Id, 10)
 	name := *monitor.Name
 
 	attributes := make(map[string][]string)
 	attributes["steadybit.label"] = []string{name}
+	attributes["steadybit.url"] = []string{fmt.Sprintf("%s/monitors/%s", siteUrl, id)}
 	attributes["datadog.monitor.name"] = []string{name}
 	attributes["datadog.monitor.id"] = []string{id}
 	attributes["datadog.monitor.tags"] = monitor.Tags

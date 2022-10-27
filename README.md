@@ -14,7 +14,8 @@ TODO
 
 - STEADYBIT_EXTENSION_API_KEY
 - STEADYBIT_EXTENSION_APPLICATION_KEY
-- STEADYBIT_EXTENSION_SITE (see https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
+- STEADYBIT_EXTENSION_SITE_PARAMETER (see https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
+- STEADYBIT_EXTENSION_SITE_URL
 
 ## Deployment
 
