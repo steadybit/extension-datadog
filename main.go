@@ -22,6 +22,7 @@ func main() {
 
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getExtensionList))
 	extmonitor.RegisterMonitorDiscoveryHandlers()
+	extmonitor.RegisterMonitorStatusCheckHandlers()
 
 	port := 8089
 	log.Log().Msgf("Starting extension-datadog server on port %d. Get started via /", port)
@@ -43,7 +44,7 @@ func getExtensionList() ExtensionListResponse {
 		Actions: []action_kit_api.DescribingEndpointReference{
 			{
 				"GET",
-				"/monitor/action/check-status",
+				"/monitor/action/status-check",
 			},
 		},
 		Discoveries: []discovery_kit_api.DescribingEndpointReference{

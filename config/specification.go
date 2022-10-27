@@ -56,3 +56,10 @@ func (s *Specification) ListMonitors(ctx context.Context, params datadogV1.ListM
 	api := datadogV1.NewMonitorsApi(apiClient)
 	return api.ListMonitors(s.WrapContextWithDatadogContextValues(ctx), params)
 }
+
+func (s *Specification) GetMonitor(ctx context.Context, monitorId int64, params datadogV1.GetMonitorOptionalParameters) (datadogV1.Monitor, *http.Response, error) {
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	api := datadogV1.NewMonitorsApi(apiClient)
+	return api.GetMonitor(ctx, monitorId, params)
+}
