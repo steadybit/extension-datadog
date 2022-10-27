@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
+	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-datadog/extmonitor"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
@@ -16,6 +17,8 @@ import (
 
 func main() {
 	extlogging.InitZeroLog()
+	config.ParseConfiguration()
+	config.ValidateConfiguration()
 
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getExtensionList))
 	extmonitor.RegisterMonitorDiscoveryHandlers()

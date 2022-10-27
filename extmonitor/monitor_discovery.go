@@ -4,16 +4,22 @@
 package extmonitor
 
 import (
+	"context"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/rs/zerolog/log"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
+	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
+	"net/http"
+	"strconv"
 )
 
 func RegisterMonitorDiscoveryHandlers() {
 	exthttp.RegisterHttpHandler("/monitor/discovery", exthttp.GetterAsHandler(getMonitorDiscoveryDescription))
 	exthttp.RegisterHttpHandler("/monitor/discovery/target-description", exthttp.GetterAsHandler(getMonitorTargetDescription))
 	exthttp.RegisterHttpHandler("/monitor/discovery/attribute-descriptions", exthttp.GetterAsHandler(getMonitorAttributeDescriptions))
-	//exthttp.RegisterHttpHandler("/monitor/discovery/discovered-targets", getRdsInstanceDiscoveryResults)
+	exthttp.RegisterHttpHandler("/monitor/discovery/discovered-targets", getMonitorDiscoveryResults)
 }
 
 func getMonitorDiscoveryDescription() discovery_kit_api.DiscoveryDescription {
@@ -33,9 +39,8 @@ func getMonitorTargetDescription() discovery_kit_api.TargetDescription {
 		Id:       monitorTargetId,
 		Label:    discovery_kit_api.PluralLabel{One: "Datadog monitor", Other: "Datadog monitors"},
 		Category: extutil.Ptr("monitoring"),
-		// TODO
-		Version: "1.0.0-SNAPSHOT",
-		Icon:    extutil.Ptr(monitorIcon),
+		Version:  "1.0.0",
+		Icon:     extutil.Ptr(monitorIcon),
 		Table: discovery_kit_api.Table{
 			Columns: []discovery_kit_api.Column{
 				{Attribute: "steadybit.label"},
@@ -67,9 +72,9 @@ func getMonitorAttributeDescriptions() discovery_kit_api.AttributeDescriptions {
 					Other: "Datadog monitor IDs",
 				},
 			}, {
-				Attribute: "datadog.monitor.tag",
+				Attribute: "datadog.monitor.tags",
 				Label: discovery_kit_api.PluralLabel{
-					One:   "Datadog monitor tag",
+					One:   "Datadog monitor tags",
 					Other: "Datadog monitor tags",
 				},
 			},
@@ -77,67 +82,70 @@ func getMonitorAttributeDescriptions() discovery_kit_api.AttributeDescriptions {
 	}
 }
 
-//func getRdsInstanceDiscoveryResults(w http.ResponseWriter, r *http.Request, _ []byte) {
-//	client := rds.NewFromConfig(utils.AwsConfig)
-//	targets, err := GetAllRdsInstances(r.Context(), client)
-//	if err != nil {
-//		exthttp.WriteError(w, extension_kit.ToError("Failed to collect RDS instance information", err))
-//	} else {
-//		exthttp.WriteBody(w, discovery_kit_api.DiscoveredTargets{Targets: targets})
-//	}
-//}
-//
-//type RdsDescribeInstancesApi interface {
-//	DescribeDBInstances(ctx context.Context, params *rds.DescribeDBInstancesInput, optFns ...func(*rds.Options)) (*rds.DescribeDBInstancesOutput, error)
-//}
-//
-//func GetAllRdsInstances(ctx context.Context, rdsApi RdsDescribeInstancesApi) ([]discovery_kit_api.Target, error) {
-//	result := make([]discovery_kit_api.Target, 0, 20)
-//
-//	var marker *string = nil
-//	for {
-//		output, err := rdsApi.DescribeDBInstances(ctx, &rds.DescribeDBInstancesInput{
-//			Marker: marker,
-//		})
-//		if err != nil {
-//			return result, err
-//		}
-//
-//		for _, dbInstance := range output.DBInstances {
-//			result = append(result, toTarget(dbInstance))
-//		}
-//
-//		if output.Marker == nil {
-//			break
-//		} else {
-//			marker = output.Marker
-//		}
-//	}
-//
-//	return result, nil
-//}
-//
-//func toTarget(dbInstance types.DBInstance) discovery_kit_api.Target {
-//	arn := aws.ToString(dbInstance.DBInstanceArn)
-//	label := aws.ToString(dbInstance.DBInstanceIdentifier)
-//
-//	attributes := make(map[string][]string)
-//	attributes["steadybit.label"] = []string{label}
-//	attributes["aws.account"] = []string{utils.AwsAccountNumber}
-//	attributes["aws.arn"] = []string{arn}
-//	attributes["aws.zone"] = []string{aws.ToString(dbInstance.AvailabilityZone)}
-//	attributes["aws.rds.engine"] = []string{aws.ToString(dbInstance.Engine)}
-//	attributes["aws.rds.instance.id"] = []string{label}
-//	attributes["aws.rds.instance.status"] = []string{aws.ToString(dbInstance.DBInstanceStatus)}
-//
-//	if dbInstance.DBClusterIdentifier != nil {
-//		attributes["aws.rds.cluster"] = []string{aws.ToString(dbInstance.DBClusterIdentifier)}
-//	}
-//
-//	return discovery_kit_api.Target{
-//		Id:         arn,
-//		Label:      label,
-//		TargetType: rdsTargetId,
-//		Attributes: attributes,
-//	}
-//}
+func getMonitorDiscoveryResults(w http.ResponseWriter, r *http.Request, _ []byte) {
+	targets := GetAllMonitors(r.Context(), &config.Config)
+	exthttp.WriteBody(w, discovery_kit_api.DiscoveredTargets{Targets: targets})
+}
+
+type ListMonitorsApi interface {
+	ListMonitors(ctx context.Context, params datadogV1.ListMonitorsOptionalParameters) ([]datadogV1.Monitor, *http.Response, error)
+}
+
+func GetAllMonitors(ctx context.Context, api ListMonitorsApi) []discovery_kit_api.Target {
+	result := make([]discovery_kit_api.Target, 0, 500)
+
+	parameters := datadogV1.NewListMonitorsOptionalParameters()
+	parameters.PageSize = extutil.Ptr(int32(200))
+	parameters.Page = extutil.Ptr(int64(0))
+
+	for {
+		monitors, r, err := api.ListMonitors(ctx, *parameters)
+		if err != nil {
+			log.Err(err).Msgf("Failed to retrieve monitors from Datadog for page %d and page size %d. Full response: %v",
+				*parameters.Page,
+				*parameters.PageSize,
+				r)
+			return result
+		}
+
+		if r.StatusCode != 200 {
+			log.Error().Msgf("Datadog API responded with unexpected status code %d while retrieving monitors for page %d and page size %d. Full response: %v",
+				r.StatusCode,
+				*parameters.Page,
+				*parameters.PageSize,
+				r)
+			return result
+		}
+
+		if len(monitors) == 0 {
+			// end of list reached
+			break
+		}
+
+		for _, monitor := range monitors {
+			result = append(result, toTarget(monitor))
+		}
+
+		parameters.Page = extutil.Ptr(*parameters.Page + 1)
+	}
+
+	return result
+}
+
+func toTarget(monitor datadogV1.Monitor) discovery_kit_api.Target {
+	id := strconv.FormatInt(*monitor.Id, 10)
+	name := *monitor.Name
+
+	attributes := make(map[string][]string)
+	attributes["steadybit.label"] = []string{name}
+	attributes["datadog.monitor.name"] = []string{name}
+	attributes["datadog.monitor.id"] = []string{id}
+	attributes["datadog.monitor.tags"] = monitor.Tags
+
+	return discovery_kit_api.Target{
+		Id:         id,
+		Label:      name,
+		TargetType: monitorTargetId,
+		Attributes: attributes,
+	}
+}

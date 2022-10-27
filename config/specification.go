@@ -6,6 +6,8 @@ package config
 import (
 	"context"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"net/http"
 )
 
 type Specification struct {
@@ -38,4 +40,18 @@ func (s *Specification) WrapContextWithDatadogContextValues(ctx context.Context)
 	)
 
 	return ctx
+}
+
+func (s *Specification) ValidateCredentials(ctx context.Context) (datadogV1.AuthenticationValidationResponse, *http.Response, error) {
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	api := datadogV1.NewAuthenticationApi(apiClient)
+	return api.Validate(s.WrapContextWithDatadogContextValues(ctx))
+}
+
+func (s *Specification) ListMonitors(ctx context.Context, params datadogV1.ListMonitorsOptionalParameters) ([]datadogV1.Monitor, *http.Response, error) {
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	api := datadogV1.NewMonitorsApi(apiClient)
+	return api.ListMonitors(s.WrapContextWithDatadogContextValues(ctx), params)
 }
