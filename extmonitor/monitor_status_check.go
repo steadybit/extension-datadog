@@ -52,7 +52,8 @@ func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 				Description:  extutil.Ptr(""),
 				Type:         action_kit_api.Duration,
 				DefaultValue: extutil.Ptr("30s"),
-				Order:        extutil.Ptr(0),
+				Order:        extutil.Ptr(1),
+				Required:     extutil.Ptr(true),
 			},
 			{
 				Name:        "expectedStatus",
@@ -90,7 +91,7 @@ func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 					},
 				}),
 				Required: extutil.Ptr(false),
-				Order:    extutil.Ptr(1),
+				Order:    extutil.Ptr(2),
 			},
 		},
 		Prepare: action_kit_api.MutatingEndpointReference{
