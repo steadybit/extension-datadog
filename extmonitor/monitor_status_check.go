@@ -36,6 +36,12 @@ func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 		Version:     "1.0.0-SNAPSHOT",
 		Icon:        extutil.Ptr(monitorIcon),
 		TargetType:  extutil.Ptr(monitorTargetId),
+		TargetSelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+			{
+				Label: "by monitor name",
+				Query: "datadog.monitor.name=\"\"",
+			},
+		}),
 		Category:    extutil.Ptr("monitoring"),
 		Kind:        action_kit_api.Check,
 		TimeControl: action_kit_api.Internal,

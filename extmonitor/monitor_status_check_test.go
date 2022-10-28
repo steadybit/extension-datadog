@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
-	"github.com/steadybit/extension-datadog/utils"
+	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,7 +28,8 @@ func (m *datadogGetMonitorClientMock) GetMonitor(ctx context.Context, monitorId 
 }
 
 func getStatusRequestBody(t *testing.T, state MonitorStatusCheckState) []byte {
-	err, encodedState := utils.EncodeActionState(state)
+	var encodedState action_kit_api.ActionState
+	err := extconversion.Convert(state, &encodedState)
 	require.NoError(t, err)
 	request := action_kit_api.ActionStatusRequestBody{
 		State: encodedState,
