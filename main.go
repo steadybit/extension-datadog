@@ -24,7 +24,7 @@ func main() {
 	extmonitor.RegisterMonitorDiscoveryHandlers()
 	extmonitor.RegisterMonitorStatusCheckHandlers()
 
-	port := 8089
+	port := 8090
 	log.Log().Msgf("Starting extension-datadog server on port %d. Get started via /", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {

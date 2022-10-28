@@ -3,10 +3,11 @@
 ##
 ## Build
 ##
-FROM golang:1.19 AS build
+FROM golang:1.19-alpine AS build
 
 WORKDIR /app
 
+RUN apk add build-base
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
@@ -24,6 +25,6 @@ WORKDIR /
 
 COPY --from=build /extension-datadog /extension-datadog
 
-EXPOSE 8088
+EXPOSE 8090
 
 ENTRYPOINT ["/extension-datadog"]
