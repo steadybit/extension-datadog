@@ -40,12 +40,12 @@ func getMonitorTargetDescription() discovery_kit_api.TargetDescription {
 		Id:       monitorTargetId,
 		Label:    discovery_kit_api.PluralLabel{One: "Datadog monitor", Other: "Datadog monitors"},
 		Category: extutil.Ptr("monitoring"),
-		Version:  "1.0.0",
+		Version:  "1.0.0-SNAPSHOT",
 		Icon:     extutil.Ptr(monitorIcon),
 		Table: discovery_kit_api.Table{
 			Columns: []discovery_kit_api.Column{
 				{Attribute: "steadybit.label"},
-				{Attribute: "datadog.monitor.tag"},
+				{Attribute: "datadog.monitor.tags"},
 			},
 			OrderBy: []discovery_kit_api.OrderBy{
 				{

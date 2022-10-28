@@ -61,5 +61,5 @@ func (s *Specification) GetMonitor(ctx context.Context, monitorId int64, params 
 	configuration := datadog.NewConfiguration()
 	apiClient := datadog.NewAPIClient(configuration)
 	api := datadogV1.NewMonitorsApi(apiClient)
-	return api.GetMonitor(ctx, monitorId, params)
+	return api.GetMonitor(s.WrapContextWithDatadogContextValues(ctx), monitorId, params)
 }

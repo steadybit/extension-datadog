@@ -10,8 +10,8 @@ import (
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-datadog/config"
-	"github.com/steadybit/extension-datadog/utils"
 	extension_kit "github.com/steadybit/extension-kit"
+	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"math"
@@ -31,12 +31,13 @@ func RegisterMonitorStatusCheckHandlers() {
 func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          fmt.Sprintf("%s.status_check", monitorTargetId),
-		Label:       "status check",
+		Label:       "monitor status",
 		Description: "collects information about the monitor status and optionally verifies that the monitor has an expected status.",
-		Version:     "1.0.0",
+		Version:     "1.0.0-SNAPSHOT",
 		Icon:        extutil.Ptr(monitorIcon),
 		TargetType:  extutil.Ptr(monitorTargetId),
 		Category:    extutil.Ptr("monitoring"),
+		Kind:        action_kit_api.Check,
 		TimeControl: action_kit_api.Internal,
 		Parameters: []action_kit_api.ActionParameter{
 			{
@@ -113,7 +114,15 @@ func prepareMonitorStatusCheck(w http.ResponseWriter, _ *http.Request, body []by
 	if err != nil {
 		exthttp.WriteError(w, *err)
 	} else {
-		utils.WriteActionState(w, *state)
+		var convertedState action_kit_api.ActionState
+		err := extconversion.Convert(state, &convertedState)
+		if err != nil {
+			exthttp.WriteError(w, extension_kit.ToError("Failed to encode action state", err))
+		} else {
+			exthttp.WriteBody(w, action_kit_api.PrepareResult{
+				State: convertedState,
+			})
+		}
 	}
 }
 
@@ -130,7 +139,7 @@ func PrepareMonitorStatusCheck(body []byte) (*MonitorStatusCheckState, *extensio
 	}
 
 	duration := math.Round(request.Config["duration"].(float64))
-	end := time.Now().Add(time.Duration(duration))
+	end := time.Now().Add(time.Millisecond * time.Duration(duration))
 
 	var expectedStatus string
 	if request.Config["expectedStatus"] != nil {
@@ -178,7 +187,7 @@ func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorAp
 	now := time.Now()
 
 	var state MonitorStatusCheckState
-	err = utils.DecodeActionState(request.State, &state)
+	err = extconversion.Convert(request.State, &state)
 	if err != nil {
 		return action_kit_api.StatusResult{
 			Error: extutil.Ptr(action_kit_api.ActionKitError{
