@@ -34,9 +34,9 @@ func getStatusRequestBody(t *testing.T, state MonitorStatusCheckState) []byte {
 	request := action_kit_api.ActionStatusRequestBody{
 		State: encodedState,
 	}
-	json, err := json.Marshal(request)
+	reqJson, err := json.Marshal(request)
 	require.NoError(t, err)
-	return json
+	return reqJson
 }
 
 func TestPrepareExtractsState(t *testing.T) {
@@ -52,11 +52,11 @@ func TestPrepareExtractsState(t *testing.T) {
 			},
 		}),
 	}
-	json, err := json.Marshal(request)
+	reqJson, err := json.Marshal(request)
 	require.NoError(t, err)
 
 	// When
-	state, extErr := PrepareMonitorStatusCheck(json)
+	state, extErr := PrepareMonitorStatusCheck(reqJson)
 
 	// Then
 	require.Nil(t, extErr)
@@ -77,11 +77,11 @@ func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 			},
 		}),
 	}
-	json, err := json.Marshal(request)
+	reqJson, err := json.Marshal(request)
 	require.NoError(t, err)
 
 	// When
-	state, extErr := PrepareMonitorStatusCheck(json)
+	state, extErr := PrepareMonitorStatusCheck(reqJson)
 
 	// Then
 	require.Nil(t, extErr)
@@ -102,11 +102,11 @@ func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 			},
 		}),
 	}
-	json, err := json.Marshal(request)
+	reqJson, err := json.Marshal(request)
 	require.NoError(t, err)
 
 	// When
-	state, extErr := PrepareMonitorStatusCheck(json)
+	state, extErr := PrepareMonitorStatusCheck(reqJson)
 
 	// Then
 	require.Nil(t, state)
@@ -115,7 +115,7 @@ func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 
 func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 	// Given
-	json := getStatusRequestBody(t, MonitorStatusCheckState{
+	reqJson := getStatusRequestBody(t, MonitorStatusCheckState{
 		MonitorId:      1234,
 		End:            time.Now().Add(time.Minute),
 		ExpectedStatus: string(datadogV1.MONITOROVERALLSTATES_OK),
@@ -126,7 +126,7 @@ func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 	}), fmt.Errorf("intentional error"))
 
 	// When
-	result := MonitorStatusCheckStatus(context.Background(), json, mockedApi)
+	result := MonitorStatusCheckStatus(context.Background(), reqJson, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, result.State)
@@ -138,7 +138,7 @@ func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 
 func TestExpectationMismatch(t *testing.T) {
 	// Given
-	json := getStatusRequestBody(t, MonitorStatusCheckState{
+	reqJson := getStatusRequestBody(t, MonitorStatusCheckState{
 		MonitorId:      1234,
 		End:            time.Now().Add(time.Minute * -1),
 		ExpectedStatus: string(datadogV1.MONITOROVERALLSTATES_OK),
@@ -153,7 +153,7 @@ func TestExpectationMismatch(t *testing.T) {
 	}), nil)
 
 	// When
-	result := MonitorStatusCheckStatus(context.Background(), json, mockedApi)
+	result := MonitorStatusCheckStatus(context.Background(), reqJson, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, result.State)
@@ -170,7 +170,7 @@ func TestExpectationMismatch(t *testing.T) {
 
 func TestExpectationSuccess(t *testing.T) {
 	// Given
-	json := getStatusRequestBody(t, MonitorStatusCheckState{
+	reqJson := getStatusRequestBody(t, MonitorStatusCheckState{
 		MonitorId:      1234,
 		End:            time.Now().Add(time.Minute * -1),
 		ExpectedStatus: string(datadogV1.MONITOROVERALLSTATES_WARN),
@@ -185,11 +185,59 @@ func TestExpectationSuccess(t *testing.T) {
 	}), nil)
 
 	// When
-	result := MonitorStatusCheckStatus(context.Background(), json, mockedApi)
+	result := MonitorStatusCheckStatus(context.Background(), reqJson, mockedApi, "https://example.com")
 
 	// Then
 	require.Nil(t, result.State)
 	require.True(t, result.Completed)
 	require.Nil(t, result.Error)
 	require.Len(t, *result.Metrics, 1)
+}
+
+func TestCreateMetric(t *testing.T) {
+	// Given
+	now := time.Now()
+	siteUrl := "https://app.datadoghq.eu"
+	monitor := extutil.Ptr(datadogV1.Monitor{
+		Id:           extutil.Ptr(int64(42)),
+		Name:         extutil.Ptr("gateway readiness"),
+		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_ALERT),
+	})
+
+	// When
+	metric := toMetric(monitor, now, siteUrl)
+
+	// Then
+	require.Equal(t, "datadog_monitor_status", *metric.Name)
+	require.Equal(t, float64(0), metric.Value)
+	require.Equal(t, now, metric.Timestamp)
+	require.Equal(t, "42", metric.Metric["datadog.monitor.id"])
+	require.Equal(t, "gateway readiness", metric.Metric["datadog.monitor.name"])
+	require.Equal(t, "danger", metric.Metric["state"])
+	require.Equal(t, "Monitor status is: Alert", metric.Metric["tooltip"])
+	require.Equal(t, "https://app.datadoghq.eu/monitors/42", metric.Metric["url"])
+}
+
+func TestCreateMetricForUnknownState(t *testing.T) {
+	// Given
+	now := time.Now()
+	siteUrl := "https://app.datadoghq.eu"
+	monitor := extutil.Ptr(datadogV1.Monitor{
+		Id:           extutil.Ptr(int64(42)),
+		Name:         extutil.Ptr("gateway readiness"),
+		OverallState: nil,
+	})
+
+	// When
+	metric := toMetric(monitor, now, siteUrl)
+
+	// Then
+	require.Equal(t, "datadog_monitor_status", *metric.Name)
+	require.Equal(t, float64(0), metric.Value)
+	require.Equal(t, now, metric.Timestamp)
+	require.Equal(t, "42", metric.Metric["datadog.monitor.id"])
+	require.Equal(t, "gateway readiness", metric.Metric["datadog.monitor.name"])
+	require.Equal(t, "warn", metric.Metric["state"])
+	require.Equal(t, "Monitor status is: Unknown", metric.Metric["tooltip"])
+	require.Equal(t, "https://app.datadoghq.eu/monitors/42", metric.Metric["url"])
 }

@@ -94,6 +94,30 @@ func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 				Order:    extutil.Ptr(2),
 			},
 		},
+		Widgets: extutil.Ptr([]action_kit_api.Widget{
+			action_kit_api.StateOverTimeWidget{
+				Type:  action_kit_api.ComSteadybitWidgetStateOverTime,
+				Title: "Datadog Monitor Status",
+				Identity: action_kit_api.StateOverTimeWidgetIdentityConfig{
+					From: "datadog.monitor.id",
+				},
+				Label: action_kit_api.StateOverTimeWidgetLabelConfig{
+					From: "datadog.monitor.name",
+				},
+				State: action_kit_api.StateOverTimeWidgetStateConfig{
+					From: "state",
+				},
+				Tooltip: action_kit_api.StateOverTimeWidgetTooltipConfig{
+					From: "tooltip",
+				},
+				Url: extutil.Ptr(action_kit_api.StateOverTimeWidgetUrlConfig{
+					From: extutil.Ptr("url"),
+				}),
+				Value: extutil.Ptr(action_kit_api.StateOverTimeWidgetValueConfig{
+					Hide: extutil.Ptr(true),
+				}),
+			},
+		}),
 		Prepare: action_kit_api.MutatingEndpointReference{
 			Method: "POST",
 			Path:   "/monitor/action/status-check/prepare",
@@ -170,7 +194,7 @@ func startMonitorStatusCheck(w http.ResponseWriter, _ *http.Request, _ []byte) {
 }
 
 func monitorStatusCheckStatus(w http.ResponseWriter, req *http.Request, body []byte) {
-	result := MonitorStatusCheckStatus(req.Context(), body, &config.Config)
+	result := MonitorStatusCheckStatus(req.Context(), body, &config.Config, config.Config.SiteUrl)
 	exthttp.WriteBody(w, result)
 }
 
@@ -178,7 +202,7 @@ type GetMonitorApi interface {
 	GetMonitor(ctx context.Context, monitorId int64, params datadogV1.GetMonitorOptionalParameters) (datadogV1.Monitor, *http.Response, error)
 }
 
-func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorApi) action_kit_api.StatusResult {
+func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorApi, siteUrl string) action_kit_api.StatusResult {
 	var request action_kit_api.ActionStatusRequestBody
 	err := json.Unmarshal(body, &request)
 	if err != nil {
@@ -235,16 +259,7 @@ func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorAp
 	}
 
 	metrics := []action_kit_api.Metric{
-		{
-			Name: extutil.Ptr("datadog_monitor_status"),
-			Metric: map[string]string{
-				"datadog.monitor.id":   strconv.FormatInt(*monitor.Id, 10),
-				"datadog.monitor.name": *monitor.Name,
-			},
-			Timestamp: now,
-			// TODO
-			Value: 0,
-		},
+		*toMetric(&monitor, now, siteUrl),
 	}
 
 	return action_kit_api.StatusResult{
@@ -252,4 +267,46 @@ func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorAp
 		Error:     checkError,
 		Metrics:   extutil.Ptr(metrics),
 	}
+}
+
+func toMetric(monitor *datadogV1.Monitor, now time.Time, siteUrl string) *action_kit_api.Metric {
+	var tooltip string
+	var state string
+
+	if monitor.OverallState == nil || *monitor.OverallState == datadogV1.MONITOROVERALLSTATES_UNKNOWN {
+		state = "warn"
+		tooltip = "Monitor status is: Unknown"
+	} else {
+		tooltip = fmt.Sprintf("Monitor status is: %s", *monitor.OverallState)
+		switch *monitor.OverallState {
+		case datadogV1.MONITOROVERALLSTATES_ALERT:
+			state = "danger"
+		case datadogV1.MONITOROVERALLSTATES_IGNORED:
+			state = "warn"
+		case datadogV1.MONITOROVERALLSTATES_NO_DATA:
+			state = "info"
+		case datadogV1.MONITOROVERALLSTATES_OK:
+			state = "success"
+		case datadogV1.MONITOROVERALLSTATES_SKIPPED:
+			state = "info"
+		case datadogV1.MONITOROVERALLSTATES_WARN:
+			state = "warn"
+		default:
+			state = "danger"
+		}
+	}
+
+	monitorId := strconv.FormatInt(*monitor.Id, 10)
+	return extutil.Ptr(action_kit_api.Metric{
+		Name: extutil.Ptr("datadog_monitor_status"),
+		Metric: map[string]string{
+			"datadog.monitor.id":   monitorId,
+			"datadog.monitor.name": *monitor.Name,
+			"state":                state,
+			"tooltip":              tooltip,
+			"url":                  fmt.Sprintf("%s/monitors/%s", siteUrl, monitorId),
+		},
+		Timestamp: now,
+		Value:     0,
+	})
 }

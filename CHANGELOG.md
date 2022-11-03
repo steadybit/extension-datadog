@@ -3,6 +3,7 @@
 ## UNRELEASED
 
  - Correctly mark duration parameter for status check action as required.
+ - Add monitor status widgets to the execution view. 
 
 ## v1.0.0
 
