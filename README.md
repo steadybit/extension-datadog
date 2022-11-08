@@ -23,6 +23,7 @@ The Steadybit agent needs to be configured to interact with the Datadog extensio
 
 STEADYBIT_AGENT_ACTIONS_EXTENSIONS_0_URL=http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090
 STEADYBIT_AGENT_DISCOVERIES_EXTENSIONS_0_URL=http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090
+STEADYBIT_AGENT_EVENTS_EXTENSIONS_0_URL=http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090
 ```
 
 When leveraging our official Helm charts, you can set the configuration through additional environment variables on the agent:
@@ -31,5 +32,7 @@ When leveraging our official Helm charts, you can set the configuration through 
 --set agent.env[0].name=STEADYBIT_AGENT_ACTIONS_EXTENSIONS_0_URL \
 --set agent.env[0].value="http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090" \
 --set agent.env[1].name=STEADYBIT_AGENT_DISCOVERIES_EXTENSIONS_0_URL \
+--set agent.env[1].value="http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090"
+--set agent.env[1].name=STEADYBIT_AGENT_EVENTS_EXTENSIONS_0_URL \
 --set agent.env[1].value="http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090"
 ```
