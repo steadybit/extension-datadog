@@ -75,6 +75,7 @@ func getExtensionList() ExtensionListResponse {
 				Method:     "POST",
 				Path:       "/events/experiment-started",
 				ListenTo:   []string{"experiment.execution.created"},
+
 				RestrictTo: extutil.Ptr(event_kit_api.Leader),
 			},
 			{
