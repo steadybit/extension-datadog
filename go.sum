@@ -28,10 +28,10 @@ github.com/steadybit/action-kit/go/action_kit_api/v2 v2.2.0 h1:Qu4Sl32W/e66dp9wx
 github.com/steadybit/action-kit/go/action_kit_api/v2 v2.2.0/go.mod h1:4yGr/DzsHpw6elju1XHCeUsY/qoqNTcLY3ytgnNcMt8=
 github.com/steadybit/discovery-kit/go/discovery_kit_api v1.1.0 h1:Ue2pIpPmtcVTcwILZlRfAsKNbznUjrRfmeZXlta4YOw=
 github.com/steadybit/discovery-kit/go/discovery_kit_api v1.1.0/go.mod h1:OnIfjrBhmMQCYxriHmr8mT1wCpvqIZxwBHWnanFhgNA=
-github.com/steadybit/event-kit/go/event_kit_api v0.0.0-20221107141914-aaa5e12c569c h1:s0/R6eeHfahTTK/tKVYPodJkgQZTD9Vffsz0SIo5yIM=
-github.com/steadybit/event-kit/go/event_kit_api v0.0.0-20221107141914-aaa5e12c569c/go.mod h1:YAliz224K5oWE48iOz73kLdLR/YuqjI7UraOTHJmlAA=
 github.com/steadybit/event-kit/go/event_kit_api v0.0.0-20221108164628-ca18aa6092e6 h1:ziSq53FznOUuDboZI/YA/xiO41O0neahEaPE2fARjkY=
 github.com/steadybit/event-kit/go/event_kit_api v0.0.0-20221108164628-ca18aa6092e6/go.mod h1:YAliz224K5oWE48iOz73kLdLR/YuqjI7UraOTHJmlAA=
+github.com/steadybit/event-kit/go/event_kit_api v0.0.0-20221110145859-7bd695744de8 h1:x/5QUQopmLJIy97APVCX/CzVevCEKvHfCHRCOX/d/5I=
+github.com/steadybit/event-kit/go/event_kit_api v0.0.0-20221110145859-7bd695744de8/go.mod h1:YAliz224K5oWE48iOz73kLdLR/YuqjI7UraOTHJmlAA=
 github.com/steadybit/extension-kit v1.4.0 h1:una2/KeDT0j1+bfhicOrUoL3x9IgoC6l7WLDP2AgJmQ=
 github.com/steadybit/extension-kit v1.4.0/go.mod h1:RpEERODMoEqNL5GXdMRhnRJwu1vUlHBS+2cZ9WWKQKg=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
