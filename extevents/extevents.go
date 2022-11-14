@@ -16,6 +16,7 @@ import (
 	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -29,8 +30,12 @@ type SendEventApi interface {
 }
 
 func onExperimentStarted(w http.ResponseWriter, r *http.Request, body []byte) {
-	// extract the request body to EventRequestBody
-	tags := convertSteadybitEventToDataDogEventTags(w, r, body)
+	event, err := parseBodyToEventRequestBody(body)
+	if err != nil {
+		exthttp.WriteError(w, extension_kit.ToError("Failed to decode event request body", err))
+		return
+	}
+	tags := convertSteadybitEventToDataDogEventTags(w, event)
 	if tags == nil {
 		return
 	}
@@ -48,8 +53,12 @@ func onExperimentStarted(w http.ResponseWriter, r *http.Request, body []byte) {
 }
 
 func onExperimentCompleted(w http.ResponseWriter, r *http.Request, body []byte) {
-	// extract the request body to EventRequestBody
-	tags := convertSteadybitEventToDataDogEventTags(w, r, body)
+	event, err := parseBodyToEventRequestBody(body)
+	if err != nil {
+		exthttp.WriteError(w, extension_kit.ToError("Failed to decode event request body", err))
+		return
+	}
+	tags := convertSteadybitEventToDataDogEventTags(w, event)
 	if tags == nil {
 		return
 	}
@@ -66,15 +75,7 @@ func onExperimentCompleted(w http.ResponseWriter, r *http.Request, body []byte) 
 	exthttp.WriteBody(w, result)
 }
 
-func convertSteadybitEventToDataDogEventTags(w http.ResponseWriter, r *http.Request, body []byte) []string {
-	var event event_kit_api.EventRequestBody
-	err := json.Unmarshal(body, &event)
-	if err != nil {
-		exthttp.WriteError(w, extension_kit.ToError("Failed to decode event request body", err))
-		return nil
-	}
-
-	log.Debug().Msgf("Req %s body: %s", r, event)
+func convertSteadybitEventToDataDogEventTags(w http.ResponseWriter, event event_kit_api.EventRequestBody) []string {
 
 	tags := []string{
 		"source:Steadybit",
@@ -88,7 +89,12 @@ func convertSteadybitEventToDataDogEventTags(w http.ResponseWriter, r *http.Requ
 		"experiment_key:" + event.ExperimentExecution.ExperimentKey,
 		"experiment_name:" + event.ExperimentExecution.Name,
 		string("state:" + event.ExperimentExecution.State),
-		//"Principal:" + event.Principal, //TODO: add principal to event
+	}
+
+	if reflect.TypeOf(event.Principal) == reflect.TypeOf(event_kit_api.UserPrincipal{}) {
+		userPrincipal := event.Principal.(event_kit_api.UserPrincipal)
+		tags = append(tags, "username:"+userPrincipal.Username)
+		tags = append(tags, "name_of_user:"+userPrincipal.Name)
 	}
 
 	if len(event.ExperimentExecution.Hypothesis) > 0 {
@@ -106,6 +112,17 @@ func convertSteadybitEventToDataDogEventTags(w http.ResponseWriter, r *http.Requ
 	}
 
 	return tags
+}
+
+func parseBodyToEventRequestBody(body []byte) (event_kit_api.EventRequestBody, error) {
+	var event event_kit_api.EventRequestBody
+	err := json.Unmarshal(body, &event)
+	if err != nil {
+		return event_kit_api.EventRequestBody{}, err
+	}
+
+	log.Debug().Msgf("Body: %v", event)
+	return event, nil
 }
 
 func SendDatadogEvent(ctx context.Context, api SendEventApi, datadogEventBody datadogV1.EventCreateRequest) datadogV1.EventCreateResponse {
