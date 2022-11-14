@@ -63,3 +63,10 @@ func (s *Specification) GetMonitor(ctx context.Context, monitorId int64, params 
 	api := datadogV1.NewMonitorsApi(apiClient)
 	return api.GetMonitor(s.WrapContextWithDatadogContextValues(ctx), monitorId, params)
 }
+
+func (s *Specification) SendEvent(ctx context.Context, datadogEventBody datadogV1.EventCreateRequest) (datadogV1.EventCreateResponse, *http.Response, error) {
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	api := datadogV1.NewEventsApi(apiClient)
+	return api.CreateEvent(s.WrapContextWithDatadogContextValues(ctx), datadogEventBody)
+}
