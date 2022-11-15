@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.1
+
+ - Also observe the events `experiment.execution.failed`, `experiment.execution.canceled` and `experiment.execution.errored` to report all relevant event types to Datadog.
+
 ## v1.2.0
 
  - Reports events to Datadog to mark the start and end of experiments.
