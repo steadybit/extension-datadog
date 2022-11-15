@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2022 Steadybit GmbH
+
 /*
  * Copyright 2022 steadybit GmbH. All rights reserved.
  */
@@ -64,7 +67,6 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 		{
 			name: "Successfully convert event to datadog tags",
 			args: args{
-				w: nil,
 				event: event_kit_api.EventRequestBody{
 					Environment: extutil.Ptr(event_kit_api.Environment{
 						Id:   "test",
@@ -104,26 +106,28 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 			},
 			want: []string{
 				"source:Steadybit",
-				"environment:gateway",
+				"environment_name:gateway",
 				"event_name:experiment.started",
 				"event_time:2021-01-01 00:00:00 +0000 UTC",
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"team:gateway",
-				"tenant:name",
+				"team_name:gateway",
+				"team_key:test",
+				"tenant_name:name",
+				"tenant_key:key",
 				"execution_id:42.000000",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
-				"state:created",
-				"username:Pan",
-				"name_of_user:Peter",
-				"hypothesis:Hypothesis",
+				"execution_state:created",
+				"principal_type:user",
+				"principal_username:Pan",
+				"principal_name:Peter",
+				"experiment_hypothesis:Hypothesis",
 				"started_time:" + startedTime.Format(time.RFC3339),
 				"ended_time:" + endedTime.Format(time.RFC3339)},
 		},
 		{
 			name: "Successfully convert event to datadog tags without Principal",
 			args: args{
-				w: nil,
 				event: event_kit_api.EventRequestBody{
 					Environment: extutil.Ptr(event_kit_api.Environment{
 						Id:   "test",
@@ -143,8 +147,11 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 						StartedTime:          startedTime,
 						State:                event_kit_api.Created,
 					}),
-					Id:        uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
-					Principal: nil,
+					Id: uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
+					Principal: event_kit_api.AccessTokenPrincipal{
+						Name:          "MyFancyToken",
+						PrincipalType: string(event_kit_api.AccessToken),
+					},
 					Team: extutil.Ptr(event_kit_api.Team{
 						Id:   "test",
 						Key:  "test",
@@ -158,24 +165,27 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 			},
 			want: []string{
 				"source:Steadybit",
-				"environment:gateway",
+				"environment_name:gateway",
 				"event_name:experiment.started",
 				"event_time:2021-01-01 00:00:00 +0000 UTC",
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"team:gateway",
-				"tenant:name",
+				"team_name:gateway",
+				"team_key:test",
+				"tenant_name:name",
+				"tenant_key:key",
 				"execution_id:42.000000",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
-				"state:created",
-				"hypothesis:Hypothesis",
+				"execution_state:created",
+				"principal_type:access_token",
+				"principal_name:MyFancyToken",
+				"experiment_hypothesis:Hypothesis",
 				"started_time:" + startedTime.Format(time.RFC3339),
 				"ended_time:" + endedTime.Format(time.RFC3339)},
 		},
 		{
-			name: "Successfully convert event to datadog tags without Hyptothesis",
+			name: "Successfully convert event to datadog tags without hypothesis",
 			args: args{
-				w: nil,
 				event: event_kit_api.EventRequestBody{
 					Environment: extutil.Ptr(event_kit_api.Environment{
 						Id:   "test",
@@ -210,16 +220,18 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 			},
 			want: []string{
 				"source:Steadybit",
-				"environment:gateway",
+				"environment_name:gateway",
 				"event_name:experiment.started",
 				"event_time:2021-01-01 00:00:00 +0000 UTC",
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"team:gateway",
-				"tenant:name",
+				"team_name:gateway",
+				"team_key:test",
+				"tenant_name:name",
+				"tenant_key:key",
 				"execution_id:42.000000",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
-				"state:created",
+				"execution_state:created",
 				"started_time:" + startedTime.Format(time.RFC3339),
 				"ended_time:" + endedTime.Format(time.RFC3339)},
 		},
@@ -227,7 +239,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := convertSteadybitEventToDataDogEventTags(tt.args.w, tt.args.event); !reflect.DeepEqual(got, tt.want) {
+			if got := convertSteadybitEventToDataDogEventTags(tt.args.event); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("convertSteadybitEventToDataDogEventTags() = %v, want %v", got, tt.want)
 			}
 		})

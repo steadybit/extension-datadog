@@ -15,8 +15,6 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
-	"os"
-	"reflect"
 	"time"
 )
 
@@ -35,21 +33,23 @@ func onExperimentStarted(w http.ResponseWriter, r *http.Request, body []byte) {
 		exthttp.WriteError(w, extension_kit.ToError("Failed to decode event request body", err))
 		return
 	}
-	tags := convertSteadybitEventToDataDogEventTags(w, event)
+	tags := convertSteadybitEventToDataDogEventTags(event)
 	if tags == nil {
 		return
 	}
 
 	datadogEventBody := datadogV1.EventCreateRequest{
-		Title:          "Experiment started",
-		Text:           "An experiment has been started by the Steadybit platform",
+		Title: fmt.Sprintf("Experiment '%s' (execution ID %.0f) started", event.ExperimentExecution.Name, event.ExperimentExecution.ExecutionId),
+		Text: fmt.Sprintf("%%%%%% \nThe chaos engineering experiment `%s` (execution %.0f) started.\n\nThe experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event).\n %%%%%%",
+			event.ExperimentExecution.Name,
+			event.ExperimentExecution.ExecutionId),
 		Tags:           tags,
 		SourceTypeName: extutil.Ptr("Steadybit"),
 	}
 
-	result := SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
+	SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
 
-	exthttp.WriteBody(w, result)
+	exthttp.WriteBody(w, "{}")
 }
 
 func onExperimentCompleted(w http.ResponseWriter, r *http.Request, body []byte) {
@@ -58,47 +58,66 @@ func onExperimentCompleted(w http.ResponseWriter, r *http.Request, body []byte) 
 		exthttp.WriteError(w, extension_kit.ToError("Failed to decode event request body", err))
 		return
 	}
-	tags := convertSteadybitEventToDataDogEventTags(w, event)
+	tags := convertSteadybitEventToDataDogEventTags(event)
 	if tags == nil {
 		return
 	}
 
+	duration := event.ExperimentExecution.EndedTime.Sub(event.ExperimentExecution.PreparedTime)
 	datadogEventBody := datadogV1.EventCreateRequest{
-		Title:          "Experiment ended",
-		Text:           "An experiment has ended by the Steadybit platform",
+		Title: fmt.Sprintf("Experiment '%s' (execution ID %.0f) ended", event.ExperimentExecution.Name, event.ExperimentExecution.ExecutionId),
+		Text: fmt.Sprintf("%%%%%% \nThe chaos engineering experiment `%s` (execution %.0f) ended with state `%s` after %.2f seconds.\n\nThe experiment was executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event).\n %%%%%%",
+			event.ExperimentExecution.Name,
+			event.ExperimentExecution.ExecutionId,
+			event.ExperimentExecution.State,
+			duration.Seconds()),
 		Tags:           tags,
 		SourceTypeName: extutil.Ptr("Steadybit"),
 	}
 
-	result := SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
+	SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
 
-	exthttp.WriteBody(w, result)
+	exthttp.WriteBody(w, "{}")
 }
 
-func convertSteadybitEventToDataDogEventTags(w http.ResponseWriter, event event_kit_api.EventRequestBody) []string {
-
+func convertSteadybitEventToDataDogEventTags(event event_kit_api.EventRequestBody) []string {
 	tags := []string{
 		"source:Steadybit",
-		"environment:" + event.Environment.Name,
+		"environment_name:" + event.Environment.Name,
 		"event_name:" + event.EventName,
 		"event_time:" + event.EventTime.String(),
 		"event_id:" + event.Id.String(),
-		"team:" + event.Team.Name,
-		"tenant:" + event.Tenant.Name,
+		"team_name:" + event.Team.Name,
+		"team_key:" + event.Team.Key,
+		"tenant_name:" + event.Tenant.Name,
+		"tenant_key:" + event.Tenant.Key,
 		"execution_id:" + fmt.Sprintf("%f", event.ExperimentExecution.ExecutionId),
 		"experiment_key:" + event.ExperimentExecution.ExperimentKey,
 		"experiment_name:" + event.ExperimentExecution.Name,
-		string("state:" + event.ExperimentExecution.State),
+		string("execution_state:" + event.ExperimentExecution.State),
 	}
 
-	if reflect.TypeOf(event.Principal) == reflect.TypeOf(event_kit_api.UserPrincipal{}) {
-		userPrincipal := event.Principal.(event_kit_api.UserPrincipal)
-		tags = append(tags, "username:"+userPrincipal.Username)
-		tags = append(tags, "name_of_user:"+userPrincipal.Name)
+	userPrincipal, isUserPrincipal := event.Principal.(event_kit_api.UserPrincipal)
+	if isUserPrincipal {
+		tags = append(tags, "principal_type:"+userPrincipal.PrincipalType)
+		tags = append(tags, "principal_username:"+userPrincipal.Username)
+		tags = append(tags, "principal_name:"+userPrincipal.Name)
+	}
+
+	accessTokenPrincipal, isAccessTokenPrincipal := event.Principal.(event_kit_api.AccessTokenPrincipal)
+	if isAccessTokenPrincipal {
+		tags = append(tags, "principal_type:"+accessTokenPrincipal.PrincipalType)
+		tags = append(tags, "principal_name:"+accessTokenPrincipal.Name)
+	}
+
+	batchPrincipal, isBatchPrincipal := event.Principal.(event_kit_api.BatchPrincipal)
+	if isBatchPrincipal {
+		tags = append(tags, "principal_type:"+batchPrincipal.PrincipalType)
+		tags = append(tags, "principal_username:"+batchPrincipal.Username)
 	}
 
 	if len(event.ExperimentExecution.Hypothesis) > 0 {
-		tags = append(tags, "hypothesis:"+event.ExperimentExecution.Hypothesis)
+		tags = append(tags, "experiment_hypothesis:"+event.ExperimentExecution.Hypothesis)
 	}
 
 	if event.ExperimentExecution.StartedTime.IsZero() {
@@ -117,32 +136,18 @@ func convertSteadybitEventToDataDogEventTags(w http.ResponseWriter, event event_
 func parseBodyToEventRequestBody(body []byte) (event_kit_api.EventRequestBody, error) {
 	var event event_kit_api.EventRequestBody
 	err := json.Unmarshal(body, &event)
-	if err != nil {
-		return event_kit_api.EventRequestBody{}, err
-	}
-
-	log.Debug().Msgf("Body: %v", event)
-	return event, nil
+	return event, err
 }
 
-func SendDatadogEvent(ctx context.Context, api SendEventApi, datadogEventBody datadogV1.EventCreateRequest) datadogV1.EventCreateResponse {
-	result, r, err := api.SendEvent(ctx, datadogEventBody)
+func SendDatadogEvent(ctx context.Context, api SendEventApi, datadogEventBody datadogV1.EventCreateRequest) {
+	_, r, err := api.SendEvent(ctx, datadogEventBody)
 
 	if err != nil {
 		log.Err(err).Msgf("Failed to send Datadog event. Full response %v",
 			r)
-		return result
-	}
-
-	if r.StatusCode != 202 && r.StatusCode != 200 {
+	} else if r.StatusCode != 202 && r.StatusCode != 200 {
 		log.Error().Msgf("Datadog API responded with unexpected status code %d while sending Event. Full response: %v",
 			r.StatusCode,
 			r)
-		return result
 	}
-
-	responseContent, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(os.Stdout, "Response from `EventsApi.CreateEvent`:\n%s\n", responseContent)
-
-	return result
 }

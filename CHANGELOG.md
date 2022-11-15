@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.0
+
+ - Reports events to Datadog to mark the start and end of experiments.
+
 ## v1.1.0
 
  - Correctly mark duration parameter for status check action as required.
