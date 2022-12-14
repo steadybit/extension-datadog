@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.0
+
+ - Support for the `STEADYBIT_LOG_FORMAT` env variable. When set to `json`, extensions will log JSON lines to stderr.
+
 ## v1.2.1
 
  - Also observe the events `experiment.execution.failed`, `experiment.execution.canceled` and `experiment.execution.errored` to report all relevant event types to Datadog.
