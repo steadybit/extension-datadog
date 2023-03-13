@@ -31,7 +31,7 @@ func RegisterMonitorStatusCheckHandlers() {
 func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          fmt.Sprintf("%s.status_check", monitorTargetId),
-		Label:       "monitor status",
+		Label:       "Monitor Status",
 		Description: "collects information about the monitor status and optionally verifies that the monitor has an expected status.",
 		Version:     "1.0.0-SNAPSHOT",
 		Icon:        extutil.Ptr(monitorIcon),
