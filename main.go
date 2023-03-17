@@ -10,6 +10,7 @@ import (
 	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-datadog/extevents"
 	"github.com/steadybit/extension-datadog/extmonitor"
+	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-kit/extutil"
@@ -17,6 +18,7 @@ import (
 
 func main() {
 	extlogging.InitZeroLog()
+	extbuild.PrintBuildInformation()
 	config.ParseConfiguration()
 	config.ValidateConfiguration()
 
