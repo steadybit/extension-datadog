@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.5.0
+
+ - Print build information on extension startup.
+
 ## v1.4.0
 
  - Support creation of a TLS server through the environment variables `STEADYBIT_EXTENSION_TLS_SERVER_CERT` and `STEADYBIT_EXTENSION_TLS_SERVER_KEY`. Both environment variables must refer to files containing the certificate and key in PEM format.
