@@ -10,7 +10,7 @@ A [Steadybit](https://www.steadybit.com/) check implementation for data exposed 
 
 ## Deployment
 
-We recommend that you deploy the extension with our [official Helm chart](https://github.com/steadybit/helm-charts/tree/main/charts/steadybit-extension-datadog).
+We recommend that you deploy the extension with our [official Helm chart](https://github.com/steadybit/extension-datadog/tree/main/charts/steadybit-extension-datadog).
 
 ## Agent Configuration
 
