@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
 	"github.com/steadybit/extension-datadog/config"
+	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
@@ -40,7 +41,7 @@ func getMonitorTargetDescription() discovery_kit_api.TargetDescription {
 		Id:       monitorTargetId,
 		Label:    discovery_kit_api.PluralLabel{One: "Datadog monitor", Other: "Datadog monitors"},
 		Category: extutil.Ptr("monitoring"),
-		Version:  "1.0.0-SNAPSHOT",
+		Version:  extbuild.GetSemverVersionStringOrUnknown(),
 		Icon:     extutil.Ptr(monitorIcon),
 		Table: discovery_kit_api.Table{
 			Columns: []discovery_kit_api.Column{

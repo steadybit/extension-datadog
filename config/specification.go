@@ -12,8 +12,8 @@ import (
 
 type Specification struct {
 	// see https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
-	SiteParameter  string `json:"site" split_words:"true" required:"true"`
-	SiteUrl        string `json:"site" split_words:"true" required:"true"`
+	SiteParameter  string `json:"siteParameter" split_words:"true" required:"true"`
+	SiteUrl        string `json:"siteUrl" split_words:"true" required:"true"`
 	ApiKey         string `json:"apiKey" split_words:"true" required:"true"`
 	ApplicationKey string `json:"applicationKey" split_words:"true" required:"true"`
 }

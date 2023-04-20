@@ -5,42 +5,57 @@ package extmonitor
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
+	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/extension-datadog/config"
 	extension_kit "github.com/steadybit/extension-kit"
-	"github.com/steadybit/extension-kit/extconversion"
-	"github.com/steadybit/extension-kit/exthttp"
+	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func RegisterMonitorStatusCheckHandlers() {
-	exthttp.RegisterHttpHandler("/monitor/action/status-check", exthttp.GetterAsHandler(getMonitorStatusCheckDescription))
-	exthttp.RegisterHttpHandler("/monitor/action/status-check/prepare", prepareMonitorStatusCheck)
-	exthttp.RegisterHttpHandler("/monitor/action/status-check/start", startMonitorStatusCheck)
-	exthttp.RegisterHttpHandler("/monitor/action/status-check/status", monitorStatusCheckStatus)
+type MonitorStatusCheckAction struct{}
+
+// Make sure action implements all required interfaces
+var (
+	_ action_kit_sdk.Action[MonitorStatusCheckState]           = (*MonitorStatusCheckAction)(nil)
+	_ action_kit_sdk.ActionWithStatus[MonitorStatusCheckState] = (*MonitorStatusCheckAction)(nil)
+)
+
+type MonitorStatusCheckState struct {
+	MonitorId      int64
+	End            time.Time
+	ExpectedStatus string
 }
 
-func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
+func NewMonitorStatusCheckAction() action_kit_sdk.Action[MonitorStatusCheckState] {
+	return &MonitorStatusCheckAction{}
+}
+
+func (m *MonitorStatusCheckAction) NewEmptyState() MonitorStatusCheckState {
+	return MonitorStatusCheckState{}
+}
+
+func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          fmt.Sprintf("%s.status_check", monitorTargetId),
 		Label:       "Monitor Status",
 		Description: "collects information about the monitor status and optionally verifies that the monitor has an expected status.",
-		Version:     "1.0.0-SNAPSHOT",
+		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Icon:        extutil.Ptr(monitorIcon),
-		TargetType:  extutil.Ptr(monitorTargetId),
-		TargetSelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
-			{
-				Label: "by monitor name",
-				Query: "datadog.monitor.name=\"\"",
-			},
+		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
+			TargetType: monitorTargetId,
+			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+				{
+					Label: "by monitor name",
+					Query: "datadog.monitor.name=\"\"",
+				},
+			}),
 		}),
 		Category:    extutil.Ptr("monitoring"),
 		Kind:        action_kit_api.Check,
@@ -118,63 +133,26 @@ func getMonitorStatusCheckDescription() action_kit_api.ActionDescription {
 				}),
 			},
 		}),
-		Prepare: action_kit_api.MutatingEndpointReference{
-			Method: "POST",
-			Path:   "/monitor/action/status-check/prepare",
-		},
-		Start: action_kit_api.MutatingEndpointReference{
-			Method: "POST",
-			Path:   "/monitor/action/status-check/start",
-		},
+		Prepare: action_kit_api.MutatingEndpointReference{},
+		Start:   action_kit_api.MutatingEndpointReference{},
 		Status: extutil.Ptr(action_kit_api.MutatingEndpointReferenceWithCallInterval{
-			Method:       "POST",
-			Path:         "/monitor/action/status-check/status",
 			CallInterval: extutil.Ptr("5s"),
 		}),
 	}
 }
 
-type MonitorStatusCheckState struct {
-	MonitorId      int64
-	End            time.Time
-	ExpectedStatus string
-}
-
-func prepareMonitorStatusCheck(w http.ResponseWriter, _ *http.Request, body []byte) {
-	state, err := PrepareMonitorStatusCheck(body)
-	if err != nil {
-		exthttp.WriteError(w, *err)
-	} else {
-		var convertedState action_kit_api.ActionState
-		err := extconversion.Convert(state, &convertedState)
-		if err != nil {
-			exthttp.WriteError(w, extension_kit.ToError("Failed to encode action state", err))
-		} else {
-			exthttp.WriteBody(w, action_kit_api.PrepareResult{
-				State: convertedState,
-			})
-		}
-	}
-}
-
-func PrepareMonitorStatusCheck(body []byte) (*MonitorStatusCheckState, *extension_kit.ExtensionError) {
-	var request action_kit_api.PrepareActionRequestBody
-	err := json.Unmarshal(body, &request)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
-	}
-
+func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStatusCheckState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
 	monitorId := request.Target.Attributes["datadog.monitor.id"]
-	if monitorId == nil || len(monitorId) == 0 {
+	if len(monitorId) == 0 {
 		return nil, extutil.Ptr(extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil))
 	}
 
-	duration := math.Round(request.Config["duration"].(float64))
+	duration := request.Config["duration"].(int)
 	end := time.Now().Add(time.Millisecond * time.Duration(duration))
 
 	var expectedStatus string
 	if request.Config["expectedStatus"] != nil {
-		expectedStatus = request.Config["expectedStatus"].(string)
+		expectedStatus = fmt.Sprintf("%v", request.Config["expectedStatus"])
 	}
 
 	parsedMonitorId, err := strconv.ParseInt(monitorId[0], 10, 64)
@@ -182,62 +160,30 @@ func PrepareMonitorStatusCheck(body []byte) (*MonitorStatusCheckState, *extensio
 		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to parse monitor ID '%s' as int64.", monitorId[0]), nil))
 	}
 
-	return extutil.Ptr(MonitorStatusCheckState{
-		MonitorId:      parsedMonitorId,
-		End:            end,
-		ExpectedStatus: expectedStatus,
-	}), nil
+	state.MonitorId = parsedMonitorId
+	state.End = end
+	state.ExpectedStatus = expectedStatus
+
+	return nil, nil
 }
 
-func startMonitorStatusCheck(w http.ResponseWriter, _ *http.Request, _ []byte) {
-	exthttp.WriteBody(w, action_kit_api.StartActionResponse{})
+func (m *MonitorStatusCheckAction) Start(_ context.Context, _ *MonitorStatusCheckState) (*action_kit_api.StartResult, error) {
+	return nil, nil
 }
 
-func monitorStatusCheckStatus(w http.ResponseWriter, req *http.Request, body []byte) {
-	result := MonitorStatusCheckStatus(req.Context(), body, &config.Config, config.Config.SiteUrl)
-	exthttp.WriteBody(w, result)
+func (m *MonitorStatusCheckAction) Status(ctx context.Context, state *MonitorStatusCheckState) (*action_kit_api.StatusResult, error) {
+	return MonitorStatusCheckStatus(ctx, state, &config.Config, config.Config.SiteUrl)
 }
 
 type GetMonitorApi interface {
 	GetMonitor(ctx context.Context, monitorId int64, params datadogV1.GetMonitorOptionalParameters) (datadogV1.Monitor, *http.Response, error)
 }
 
-func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorApi, siteUrl string) action_kit_api.StatusResult {
-	var request action_kit_api.ActionStatusRequestBody
-	err := json.Unmarshal(body, &request)
-	if err != nil {
-		return action_kit_api.StatusResult{
-			Error: extutil.Ptr(action_kit_api.ActionKitError{
-				Title:  "Failed to parse request body",
-				Detail: extutil.Ptr(err.Error()),
-				Status: extutil.Ptr(action_kit_api.Errored),
-			}),
-		}
-	}
-
+func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckState, api GetMonitorApi, siteUrl string) (*action_kit_api.StatusResult, error) {
 	now := time.Now()
-
-	var state MonitorStatusCheckState
-	err = extconversion.Convert(request.State, &state)
-	if err != nil {
-		return action_kit_api.StatusResult{
-			Error: extutil.Ptr(action_kit_api.ActionKitError{
-				Title:  "Failed to decode action state",
-				Detail: extutil.Ptr(err.Error()),
-				Status: extutil.Ptr(action_kit_api.Errored),
-			}),
-		}
-	}
-
 	monitor, resp, err := api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters())
 	if err != nil {
-		return action_kit_api.StatusResult{
-			Error: extutil.Ptr(action_kit_api.ActionKitError{
-				Title:  fmt.Sprintf("Failed to retrieve monitor %d from Datadog. Full response: %v", state.MonitorId, resp),
-				Detail: extutil.Ptr(err.Error()),
-				Status: extutil.Ptr(action_kit_api.Errored),
-			}),
-		}
+		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog. Full response: %v", state.MonitorId, resp), err))
 	}
 
 	completed := now.After(state.End)
@@ -262,11 +208,11 @@ func MonitorStatusCheckStatus(ctx context.Context, body []byte, api GetMonitorAp
 		*toMetric(&monitor, now, siteUrl),
 	}
 
-	return action_kit_api.StatusResult{
+	return &action_kit_api.StatusResult{
 		Completed: completed,
 		Error:     checkError,
 		Metrics:   extutil.Ptr(metrics),
-	}
+	}, nil
 }
 
 func toMetric(monitor *datadogV1.Monitor, now time.Time, siteUrl string) *action_kit_api.Metric {

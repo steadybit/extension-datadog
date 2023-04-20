@@ -52,14 +52,15 @@ func TestPrepareExtractsState(t *testing.T) {
 			},
 		}),
 	}
-	reqJson, err := json.Marshal(request)
-	require.NoError(t, err)
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
 
 	// When
-	state, extErr := PrepareMonitorStatusCheck(reqJson)
+	result, err := attack.Prepare(context.TODO(), &state, request)
 
 	// Then
-	require.Nil(t, extErr)
+	require.Nil(t, result)
+	require.Nil(t, err)
 	require.Equal(t, int64(12349876), state.MonitorId)
 	require.True(t, state.End.After(time.Now()))
 	require.Equal(t, "OK", state.ExpectedStatus)
@@ -77,14 +78,15 @@ func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 			},
 		}),
 	}
-	reqJson, err := json.Marshal(request)
-	require.NoError(t, err)
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
 
 	// When
-	state, extErr := PrepareMonitorStatusCheck(reqJson)
+	result, err := attack.Prepare(context.TODO(), &state, request)
 
 	// Then
-	require.Nil(t, extErr)
+	require.Nil(t, result)
+	require.Nil(t, err)
 	require.Equal(t, int64(12349876), state.MonitorId)
 	require.True(t, state.End.After(time.Now()))
 	require.Empty(t, state.ExpectedStatus)
@@ -102,47 +104,40 @@ func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 			},
 		}),
 	}
-	reqJson, err := json.Marshal(request)
-	require.NoError(t, err)
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
 
 	// When
-	state, extErr := PrepareMonitorStatusCheck(reqJson)
+	result, err := attack.Prepare(context.TODO(), &state, request)
 
 	// Then
-	require.Nil(t, state)
-	require.Equal(t, "Failed to parse monitor ID 'NOT AN INT' as int64.", extErr.Title)
+	require.Nil(t, result)
+	require.Equal(t, "Failed to parse monitor ID 'NOT AN INT' as int64.", err.Error())
 }
 
 func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 	// Given
-	reqJson := getStatusRequestBody(t, MonitorStatusCheckState{
-		MonitorId:      1234,
-		End:            time.Now().Add(time.Minute),
-		ExpectedStatus: string(datadogV1.MONITOROVERALLSTATES_OK),
-	})
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{}, extutil.Ptr(http.Response{
 		StatusCode: 200,
 	}), fmt.Errorf("intentional error"))
 
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute)
+	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
+
 	// When
-	result := MonitorStatusCheckStatus(context.Background(), reqJson, mockedApi, "http://example.com")
+	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
-	require.Nil(t, result.State)
-	require.False(t, result.Completed)
-	require.Nil(t, result.Metrics)
-	require.Contains(t, result.Error.Title, "Failed to retrieve monitor 1234 from Datadog")
-	require.Contains(t, *result.Error.Status, action_kit_api.Errored)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "Failed to retrieve monitor 1234 from Datadog")
 }
 
 func TestExpectationMismatch(t *testing.T) {
 	// Given
-	reqJson := getStatusRequestBody(t, MonitorStatusCheckState{
-		MonitorId:      1234,
-		End:            time.Now().Add(time.Minute * -1),
-		ExpectedStatus: string(datadogV1.MONITOROVERALLSTATES_OK),
-	})
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
 		Name:         extutil.Ptr("gateway pods ready"),
@@ -152,10 +147,17 @@ func TestExpectationMismatch(t *testing.T) {
 		StatusCode: 200,
 	}), nil)
 
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * -1)
+	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
+
 	// When
-	result := MonitorStatusCheckStatus(context.Background(), reqJson, mockedApi, "http://example.com")
+	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
+	require.Nil(t, err)
 	require.Nil(t, result.State)
 	require.True(t, result.Completed)
 	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) has status 'Warn' whereas 'OK' is expected.", result.Error.Title)
@@ -170,11 +172,6 @@ func TestExpectationMismatch(t *testing.T) {
 
 func TestExpectationSuccess(t *testing.T) {
 	// Given
-	reqJson := getStatusRequestBody(t, MonitorStatusCheckState{
-		MonitorId:      1234,
-		End:            time.Now().Add(time.Minute * -1),
-		ExpectedStatus: string(datadogV1.MONITOROVERALLSTATES_WARN),
-	})
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
 		Name:         extutil.Ptr("gateway pods ready"),
@@ -184,11 +181,18 @@ func TestExpectationSuccess(t *testing.T) {
 		StatusCode: 200,
 	}), nil)
 
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * -1)
+	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_WARN)
+
 	// When
-	result := MonitorStatusCheckStatus(context.Background(), reqJson, mockedApi, "https://example.com")
+	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "https://example.com")
 
 	// Then
 	require.Nil(t, result.State)
+	require.Nil(t, err)
 	require.True(t, result.Completed)
 	require.Nil(t, result.Error)
 	require.Len(t, *result.Metrics, 1)

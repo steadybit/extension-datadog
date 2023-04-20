@@ -1,0 +1,70 @@
+# Default values for steadybit-extension-datadog.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+datadog:
+  # datadog.apiKey -- The API key (not key ID) used to access the Datadog API.
+  apiKey: ""
+  # datadog.applicationKey -- The application key (not key ID) used to access the Datadog API.
+  applicationKey: ""
+  # datadog.siteParameter -- The Datadog site's parameter in which your account is. For example, datadoghq.eu for EU or datadoghq.com for US. See https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site for more information.
+  siteParameter: ""
+  # datadog.siteUrl -- The Datadog site's URL in which your account is. For example, https://app.datadoghq.eu for EU or https://app.datadoghq.com for US. See https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site for more information.
+  siteUrl: ""
+  # datadog.existingSecret -- If defined, will skip secret creation and instead assume that the referenced secret contains the keys api-key, application-key, site-parameter and site-url.
+  existingSecret: null
+
+image:
+  # image.name -- The container image to use for the Steadybit Datadog extension.
+  name: steadybit/extension-datadog
+  # image.tag -- tag name of the extension-datadog container image to use.
+  # See https://hub.docker.com/r/steadybit/extension-datadog for all tags.
+  tag: latest
+  # image.pullPolicy -- Specifies when to pull the image container.
+  pullPolicy: Always
+
+tls:
+  server:
+    certificate:
+      # tls.server.certificate.fromSecret -- The name of the secret containing the TLS certificate for the extension. The extension will then create
+      # an HTTPS server instead of an HTTP server.
+      fromSecret: null
+  client:
+    certificates:
+      # tls.client.certificates.fromSecrets -- List of secret names containing TLS certificates for the extension to trust. The extension will require
+      # clients to authenticate using one of these certificates. In essence, this will enable mutual TLS.
+      fromSecrets: []
+
+logging:
+  # logging.level -- The active log level. Valid values are: TRACE, DEBUG, INFO, WARN, ERROR
+  level: INFO
+  # logging.format -- The format of the log entries. One of text, json
+  format: text
+
+resources:
+  requests:
+    # resources.requests.memory -- The minimal amount of memory needed
+    memory: "64Mi"
+    # resources.requests.cpu -- The minimal amount of cpu shares needed
+    cpu: "50m"
+  limits:
+    # resources.limits.memory -- The limit of memory to be used
+    memory: "128Mi"
+    # resources.limits.cpu -- The limit of cpu share to be used during its interval
+    cpu: "200m"
+
+# extra labels to apply to the Kubernetes resources
+extraLabels: {}
+
+# nodeSelector -- Node labels for pod assignment
+nodeSelector: {}
+
+# tolerations -- Tolerations to influence pod assignment
+tolerations: []
+
+# topologySpreadConstraints -- Spread constraints to influence pod assignment.
+# https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+topologySpreadConstraints: []
+
+# affinity -- Affinities to influence pod assignment.
+affinity: {}
