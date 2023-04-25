@@ -16,7 +16,7 @@ datadog:
 
 image:
   # image.name -- The container image to use for the Steadybit Datadog extension.
-  name: steadybit/extension-datadog
+  name: ghcr.io/steadybit/extension-datadog
   # image.tag -- tag name of the extension-datadog container image to use.
   # See https://hub.docker.com/r/steadybit/extension-datadog for all tags.
   tag: latest

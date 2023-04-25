@@ -46,7 +46,7 @@ manifest should match snapshot with TLS:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: steadybit/extension-datadog:latest
+              image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
                 httpGet:
@@ -125,7 +125,7 @@ manifest should match snapshot with mutual TLS:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: steadybit/extension-datadog:latest
+              image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
                 httpGet:
@@ -205,7 +205,7 @@ manifest should match snapshot without TLS:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: steadybit/extension-datadog:latest
+              image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
                 httpGet:
