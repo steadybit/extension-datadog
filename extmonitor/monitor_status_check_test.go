@@ -41,7 +41,7 @@ func getStatusRequestBody(t *testing.T, state MonitorStatusCheckState) []byte {
 
 func TestPrepareExtractsState(t *testing.T) {
 	// Given
-	request := action_kit_api.PrepareActionRequestBody{
+	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
 			"duration":       1000 * 60,
 			"expectedStatus": datadogV1.MONITOROVERALLSTATES_OK,
@@ -51,7 +51,7 @@ func TestPrepareExtractsState(t *testing.T) {
 				"datadog.monitor.id": {"12349876"},
 			},
 		}),
-	}
+	})
 	attack := MonitorStatusCheckAction{}
 	state := attack.NewEmptyState()
 
@@ -68,7 +68,7 @@ func TestPrepareExtractsState(t *testing.T) {
 
 func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 	// Given
-	request := action_kit_api.PrepareActionRequestBody{
+	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
 			"duration": 1000 * 60,
 		},
@@ -77,7 +77,7 @@ func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 				"datadog.monitor.id": {"12349876"},
 			},
 		}),
-	}
+	})
 	attack := MonitorStatusCheckAction{}
 	state := attack.NewEmptyState()
 
@@ -94,7 +94,7 @@ func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 
 func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 	// Given
-	request := action_kit_api.PrepareActionRequestBody{
+	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
 			"duration": 1000 * 60,
 		},
@@ -103,7 +103,7 @@ func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 				"datadog.monitor.id": {"NOT AN INT"},
 			},
 		}),
-	}
+	})
 	attack := MonitorStatusCheckAction{}
 	state := attack.NewEmptyState()
 

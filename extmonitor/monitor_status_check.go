@@ -147,7 +147,7 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 		return nil, extutil.Ptr(extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil))
 	}
 
-	duration := request.Config["duration"].(int)
+	duration := request.Config["duration"].(float64)
 	end := time.Now().Add(time.Millisecond * time.Duration(duration))
 
 	var expectedStatus string
