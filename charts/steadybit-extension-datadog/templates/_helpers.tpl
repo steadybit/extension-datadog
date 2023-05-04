@@ -3,6 +3,6 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "secret.name" -}}
+{{- define "datadog.secret.name" -}}
 {{- default "steadybit-extension-datadog" .Values.datadog.existingSecret -}}
 {{- end -}}

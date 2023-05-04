@@ -35,22 +35,22 @@ spec:
             - name: STEADYBIT_EXTENSION_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secret.name" . }}
+                  name: {{ include "datadog.secret.name" . }}
                   key: api-key
             - name: STEADYBIT_EXTENSION_APPLICATION_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secret.name" . }}
+                  name: {{ include "datadog.secret.name" . }}
                   key: application-key
             - name: STEADYBIT_EXTENSION_SITE_PARAMETER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secret.name" . }}
+                  name: {{ include "datadog.secret.name" . }}
                   key: site-parameter
             - name: STEADYBIT_EXTENSION_SITE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secret.name" . }}
+                  name: {{ include "datadog.secret.name" . }}
                   key: site-url
           volumeMounts:
             {{- include "extensionlib.deployment.volumeMounts" (list .) | nindent 12 }}
