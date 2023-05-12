@@ -52,6 +52,13 @@ spec:
                 secretKeyRef:
                   name: {{ include "datadog.secret.name" . }}
                   key: site-url
+            {{- with .Values.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             {{- include "extensionlib.deployment.volumeMounts" (list .) | nindent 12 }}
           livenessProbe:
@@ -62,6 +69,11 @@ spec:
             httpGet:
               path: /health/readiness
               port: 8091
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
       volumes:
         {{- include "extensionlib.deployment.volumes" (list .) | nindent 8 }}
       {{- with .Values.nodeSelector }}
