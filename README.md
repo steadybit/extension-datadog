@@ -4,35 +4,61 @@
 
 A [Steadybit](https://www.steadybit.com/) check implementation for data exposed through Datadog.
 
-## Capabilities
+Learn about the capabilities of this extension in our [Reliability Hub](https://hub.steadybit.com/extension/com.github.steadybit.extension_datadog).
 
- - Check monitor status
+## Configuration
 
-## Deployment
+| Environment Variable                  | Helm value               | Meaning                                                                                            | Required | Default |
+|---------------------------------------|--------------------------|----------------------------------------------------------------------------------------------------|----------|---------|
+| `STEADYBIT_EXTENSION_API_KEY`         | `datadog.apiKey`         | [Datadog API Key](https://docs.datadoghq.com/account_management/api-app-keys/)                     | yes      |         |
+| `STEADYBIT_EXTENSION_APPLICATION_KEY` | `datadog.applicationKey` | [Datadog Application Key](https://docs.datadoghq.com/account_management/api-app-keys/)             | yes      |         |
+| `STEADYBIT_EXTENSION_SITE_PARAMETER`  | `datadog.siteParameter`  | [Datadog Site Parameter](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site) | yes      |         |
+| `STEADYBIT_EXTENSION_SITE_URL`        | `datadog.siteUrl`        | [Datadog Site Url](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)       | yes      |         |
 
-We recommend that you deploy the extension with our [official Helm chart](https://github.com/steadybit/extension-datadog/tree/main/charts/steadybit-extension-datadog).
+The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 
-## Agent Configuration
+## Installation
 
-**Note:** When deployed in Kubernetes using our [official Helm chart](https://github.com/steadybit/helm-charts/tree/main/charts/steadybit-extension-datadog), this is not necessary because the extension can be auto-discovered.
+We recommend that you install the extension with
+our [official Helm chart](https://github.com/steadybit/extension-datadog/tree/main/charts/steadybit-extension-datadog).
 
-The Steadybit agent needs to be configured to interact with the Datadog extension by adding the following environment variables:
+### Helm
 
-```shell
-# Make sure to adapt the URLs and indices in the environment variables names as necessary for your setup
-
-STEADYBIT_AGENT_ACTIONS_EXTENSIONS_0_URL=http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090
-STEADYBIT_AGENT_DISCOVERIES_EXTENSIONS_0_URL=http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090
-STEADYBIT_AGENT_EVENTS_EXTENSIONS_0_URL=http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090
+```bash
+helm repo add steadybit https://steadybit.github.io/extension-aws
+helm repo update
 ```
 
-When leveraging our official Helm charts, you can set the configuration through additional environment variables on the agent:
+```bash
+helm upgrade steadybit-extension-datadog \\
+  --install \\
+  --wait \\
+  --timeout 5m0s \\
+  --create-namespace \\
+  --namespace steadybit-extension \\
+  --set datadog.apiKey="{{API_KEY}}" \\
+  --set datadog.applicationKey="{{APPLICATION_KEY}}" \\
+  --set datadog.siteParameter="{{SITE_PARAMETER}}" \\
+  --set datadog.siteUrl="{{SITE_URL}}" \\
+  steadybit/steadybit-extension-datadog`
+```
 
+### Docker
+
+You may alternatively start the Docker container manually.
+
+```bash
+docker run \\
+  --env STEADYBIT_LOG_LEVEL=info \\
+  --env STEADYBIT_EXTENSION_API_KEY="{{API_KEY}}" \\
+  --env STEADYBIT_EXTENSION_APPLICATION_KEY="{{APPLICATION_KEY}}" \\
+  --env STEADYBIT_EXTENSION_SITE_PARAMETER="{{SITE_PARAMETER}}" \\
+  --env STEADYBIT_EXTENSION_SITE_URL="{{SITE_URL}}" \\
+  --expose 8090 \\
+  steadybit/extension-datadog:latest
 ```
---set agent.env[0].name=STEADYBIT_AGENT_ACTIONS_EXTENSIONS_0_URL \
---set agent.env[0].value="http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090" \
---set agent.env[1].name=STEADYBIT_AGENT_DISCOVERIES_EXTENSIONS_0_URL \
---set agent.env[1].value="http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090"
---set agent.env[1].name=STEADYBIT_AGENT_EVENTS_EXTENSIONS_0_URL \
---set agent.env[1].value="http://steadybit-extension-datadog.steadybit-extension.svc.cluster.local:8090"
-```
+
+## Register the extension
+
+Make sure to register the extension at the steadybit platform. Please refer to
+the [documentation](https://docs.steadybit.com/integrate-with-steadybit/extensions/extension-installation) for more information.
