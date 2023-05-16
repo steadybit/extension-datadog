@@ -25,7 +25,7 @@ our [official Helm chart](https://github.com/steadybit/extension-datadog/tree/ma
 ### Helm
 
 ```bash
-helm repo add steadybit https://steadybit.github.io/extension-aws
+helm repo add steadybit https://steadybit.github.io/extension-datadog
 helm repo update
 ```
 
