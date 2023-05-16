@@ -55,7 +55,7 @@ docker run \\
   --env STEADYBIT_EXTENSION_SITE_PARAMETER="{{SITE_PARAMETER}}" \\
   --env STEADYBIT_EXTENSION_SITE_URL="{{SITE_URL}}" \\
   --expose 8090 \\
-  steadybit/extension-datadog:latest
+  ghcr.io/steadybit/extension-datadog:latest
 ```
 
 ## Register the extension
