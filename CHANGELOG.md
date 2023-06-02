@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.0
+
+ - Monitor shouldn't have a blast radius
+ - Run as non-root user
+ - Update dependencies
+ 
 ## v1.5.0
 
  - Print build information on extension startup.
