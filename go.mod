@@ -6,7 +6,7 @@ module github.com/steadybit/extension-datadog
 go 1.20
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.13.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.14.0
 	github.com/google/uuid v1.3.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/rs/zerolog v1.29.1
