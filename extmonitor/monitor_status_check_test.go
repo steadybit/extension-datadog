@@ -63,6 +63,7 @@ func TestPrepareExtractsState(t *testing.T) {
 	require.Nil(t, result)
 	require.Nil(t, err)
 	require.Equal(t, int64(12349876), state.MonitorId)
+	require.NotNil(t, state.Start)
 	require.True(t, state.End.After(time.Now()))
 	require.Equal(t, "OK", state.ExpectedStatus)
 	require.Equal(t, statusCheckModeAtLeastOnce, state.StatusCheckMode)
@@ -332,7 +333,9 @@ func TestCreateMetric(t *testing.T) {
 	})
 
 	// When
-	metric := toMetric(monitor, now, siteUrl)
+	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
+	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
+	metric := toMetric(monitor, now, start, end, siteUrl)
 
 	// Then
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
@@ -342,7 +345,7 @@ func TestCreateMetric(t *testing.T) {
 	require.Equal(t, "gateway readiness", metric.Metric["datadog.monitor.name"])
 	require.Equal(t, "danger", metric.Metric["state"])
 	require.Equal(t, "Monitor status is: Alert", metric.Metric["tooltip"])
-	require.Equal(t, "https://app.datadoghq.eu/monitors/42", metric.Metric["url"])
+	require.Equal(t, "https://app.datadoghq.eu/monitors/42?from_ts=1688475600000&to_ts=1688476200000", metric.Metric["url"])
 }
 
 func TestCreateMetricForUnknownState(t *testing.T) {
@@ -356,7 +359,9 @@ func TestCreateMetricForUnknownState(t *testing.T) {
 	})
 
 	// When
-	metric := toMetric(monitor, now, siteUrl)
+	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
+	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
+	metric := toMetric(monitor, now, start, end, siteUrl)
 
 	// Then
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
@@ -366,5 +371,5 @@ func TestCreateMetricForUnknownState(t *testing.T) {
 	require.Equal(t, "gateway readiness", metric.Metric["datadog.monitor.name"])
 	require.Equal(t, "warn", metric.Metric["state"])
 	require.Equal(t, "Monitor status is: Unknown", metric.Metric["tooltip"])
-	require.Equal(t, "https://app.datadoghq.eu/monitors/42", metric.Metric["url"])
+	require.Equal(t, "https://app.datadoghq.eu/monitors/42?from_ts=1688475600000&to_ts=1688476200000", metric.Metric["url"])
 }

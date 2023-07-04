@@ -29,6 +29,7 @@ var (
 
 type MonitorStatusCheckState struct {
 	MonitorId          int64
+	Start              time.Time
 	End                time.Time
 	ExpectedStatus     string
 	StatusCheckMode    string
@@ -187,6 +188,7 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	}
 
 	state.MonitorId = parsedMonitorId
+	state.Start = time.Now()
 	state.End = end
 	state.ExpectedStatus = expectedStatus
 	state.StatusCheckMode = statusCheckMode
@@ -254,7 +256,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	}
 
 	metrics := []action_kit_api.Metric{
-		*toMetric(&monitor, now, siteUrl),
+		*toMetric(&monitor, now, state.Start, state.End, siteUrl),
 	}
 
 	return &action_kit_api.StatusResult{
@@ -264,7 +266,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	}, nil
 }
 
-func toMetric(monitor *datadogV1.Monitor, now time.Time, siteUrl string) *action_kit_api.Metric {
+func toMetric(monitor *datadogV1.Monitor, now time.Time, start time.Time, end time.Time, siteUrl string) *action_kit_api.Metric {
 	var tooltip string
 	var state string
 
@@ -299,7 +301,7 @@ func toMetric(monitor *datadogV1.Monitor, now time.Time, siteUrl string) *action
 			"datadog.monitor.name": *monitor.Name,
 			"state":                state,
 			"tooltip":              tooltip,
-			"url":                  fmt.Sprintf("%s/monitors/%s", siteUrl, monitorId),
+			"url":                  fmt.Sprintf("%s/monitors/%s?from_ts=%d&to_ts=%d", siteUrl, monitorId, start.UnixMilli(), end.UnixMilli()),
 		},
 		Timestamp: now,
 		Value:     0,
