@@ -28,9 +28,11 @@ var (
 )
 
 type MonitorStatusCheckState struct {
-	MonitorId      int64
-	End            time.Time
-	ExpectedStatus string
+	MonitorId          int64
+	End                time.Time
+	ExpectedStatus     string
+	StatusCheckMode    string
+	StatusCheckSuccess bool
 }
 
 func NewMonitorStatusCheckAction() action_kit_sdk.Action[MonitorStatusCheckState] {
@@ -109,6 +111,25 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Required: extutil.Ptr(false),
 				Order:    extutil.Ptr(2),
 			},
+			{
+				Name:         "statusCheckMode",
+				Label:        "Status Check Mode",
+				Description:  extutil.Ptr("How often should the status be expected?"),
+				Type:         action_kit_api.String,
+				DefaultValue: extutil.Ptr(statusCheckModeAllTheTime),
+				Options: extutil.Ptr([]action_kit_api.ParameterOption{
+					action_kit_api.ExplicitParameterOption{
+						Label: "All the time",
+						Value: statusCheckModeAllTheTime,
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "At least once",
+						Value: statusCheckModeAtLeastOnce,
+					},
+				}),
+				Required: extutil.Ptr(true),
+				Order:    extutil.Ptr(3),
+			},
 		},
 		Widgets: extutil.Ptr([]action_kit_api.Widget{
 			action_kit_api.StateOverTimeWidget{
@@ -155,6 +176,10 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	if request.Config["expectedStatus"] != nil {
 		expectedStatus = fmt.Sprintf("%v", request.Config["expectedStatus"])
 	}
+	var statusCheckMode string
+	if request.Config["statusCheckMode"] != nil {
+		statusCheckMode = fmt.Sprintf("%v", request.Config["statusCheckMode"])
+	}
 
 	parsedMonitorId, err := strconv.ParseInt(monitorId[0], 10, 64)
 	if err != nil {
@@ -164,6 +189,7 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	state.MonitorId = parsedMonitorId
 	state.End = end
 	state.ExpectedStatus = expectedStatus
+	state.StatusCheckMode = statusCheckMode
 
 	return nil, nil
 }
@@ -189,20 +215,42 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 
 	completed := now.After(state.End)
 	var checkError *action_kit_api.ActionKitError
-	if len(state.ExpectedStatus) > 0 && monitor.OverallState != nil && string(*monitor.OverallState) != state.ExpectedStatus {
-		tags := strings.Join(monitor.Tags, ", ")
-		if len(tags) == 0 {
-			tags = "<none>"
+	if len(state.ExpectedStatus) > 0 && monitor.OverallState != nil {
+		if state.StatusCheckMode == statusCheckModeAllTheTime {
+			if string(*monitor.OverallState) != state.ExpectedStatus {
+				tags := strings.Join(monitor.Tags, ", ")
+				if len(tags) == 0 {
+					tags = "<none>"
+				}
+				checkError = extutil.Ptr(action_kit_api.ActionKitError{
+					Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
+						*monitor.Name,
+						state.MonitorId,
+						tags,
+						*monitor.OverallState,
+						state.ExpectedStatus),
+					Status: extutil.Ptr(action_kit_api.Failed),
+				})
+			}
+		} else if state.StatusCheckMode == statusCheckModeAtLeastOnce {
+			if string(*monitor.OverallState) == state.ExpectedStatus {
+				state.StatusCheckSuccess = true
+			}
+			if completed && !state.StatusCheckSuccess {
+				tags := strings.Join(monitor.Tags, ", ")
+				if len(tags) == 0 {
+					tags = "<none>"
+				}
+				checkError = extutil.Ptr(action_kit_api.ActionKitError{
+					Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) didn't have status '%s' at least once.",
+						*monitor.Name,
+						state.MonitorId,
+						tags,
+						state.ExpectedStatus),
+					Status: extutil.Ptr(action_kit_api.Failed),
+				})
+			}
 		}
-		checkError = extutil.Ptr(action_kit_api.ActionKitError{
-			Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
-				*monitor.Name,
-				state.MonitorId,
-				tags,
-				*monitor.OverallState,
-				state.ExpectedStatus),
-			Status: extutil.Ptr(action_kit_api.Failed),
-		})
 	}
 
 	metrics := []action_kit_api.Metric{
