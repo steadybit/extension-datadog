@@ -30,6 +30,7 @@ func main() {
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getExtensionList))
 	extmonitor.RegisterMonitorDiscoveryHandlers()
 	action_kit_sdk.RegisterAction(extmonitor.NewMonitorStatusCheckAction())
+	action_kit_sdk.RegisterAction(extmonitor.NewMonitorDowntimeAction())
 	extevents.RegisterEventListenerHandlers()
 
 	action_kit_sdk.InstallSignalHandler()

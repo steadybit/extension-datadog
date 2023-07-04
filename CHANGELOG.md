@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.7.0
+
+ - Links to Datadogs monitors are now using the timeframe of the experiment execution.
+ - "Monitor Status Check" has a new parameter `Status Check Mode`. Supported values are `All the time` (default) and `At least once`.
+ - New Action to create a Downtime for a monitor during an experiment execution.
+
 ## v1.6.0
 
  - Monitor shouldn't have a blast radius

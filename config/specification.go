@@ -64,6 +64,20 @@ func (s *Specification) GetMonitor(ctx context.Context, monitorId int64, params 
 	return api.GetMonitor(s.WrapContextWithDatadogContextValues(ctx), monitorId, params)
 }
 
+func (s *Specification) CreateDowntime(ctx context.Context, downtimeBody datadogV1.Downtime) (datadogV1.Downtime, *http.Response, error) {
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	api := datadogV1.NewDowntimesApi(apiClient)
+	return api.CreateDowntime(s.WrapContextWithDatadogContextValues(ctx), downtimeBody)
+}
+
+func (s *Specification) CancelDowntime(ctx context.Context, downtimeId int64) (*http.Response, error) {
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	api := datadogV1.NewDowntimesApi(apiClient)
+	return api.CancelDowntime(s.WrapContextWithDatadogContextValues(ctx), downtimeId)
+}
+
 func (s *Specification) SendEvent(ctx context.Context, datadogEventBody datadogV1.EventCreateRequest) (datadogV1.EventCreateResponse, *http.Response, error) {
 	configuration := datadog.NewConfiguration()
 	apiClient := datadog.NewAPIClient(configuration)

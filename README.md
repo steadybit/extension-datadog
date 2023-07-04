@@ -17,6 +17,12 @@ Learn about the capabilities of this extension in our [Reliability Hub](https://
 
 The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 
+## Datadog Permissions
+
+The extension requires the following application key scopes:
+- `monitors_downtime`
+- `monitors_read`
+
 ## Installation
 
 We recommend that you install the extension with

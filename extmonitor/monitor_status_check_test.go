@@ -5,11 +5,9 @@ package extmonitor
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
-	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -25,18 +23,6 @@ type datadogGetMonitorClientMock struct {
 func (m *datadogGetMonitorClientMock) GetMonitor(ctx context.Context, monitorId int64, params datadogV1.GetMonitorOptionalParameters) (datadogV1.Monitor, *http.Response, error) {
 	args := m.Called(ctx, params)
 	return args.Get(0).(datadogV1.Monitor), args.Get(1).(*http.Response), args.Error(2)
-}
-
-func getStatusRequestBody(t *testing.T, state MonitorStatusCheckState) []byte {
-	var encodedState action_kit_api.ActionState
-	err := extconversion.Convert(state, &encodedState)
-	require.NoError(t, err)
-	request := action_kit_api.ActionStatusRequestBody{
-		State: encodedState,
-	}
-	reqJson, err := json.Marshal(request)
-	require.NoError(t, err)
-	return reqJson
 }
 
 func TestPrepareExtractsState(t *testing.T) {
@@ -81,11 +67,11 @@ func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 			},
 		}),
 	})
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 
 	// When
-	result, err := attack.Prepare(context.TODO(), &state, request)
+	result, err := action.Prepare(context.TODO(), &state, request)
 
 	// Then
 	require.Nil(t, result)
@@ -107,11 +93,11 @@ func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 			},
 		}),
 	})
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 
 	// When
-	result, err := attack.Prepare(context.TODO(), &state, request)
+	result, err := action.Prepare(context.TODO(), &state, request)
 
 	// Then
 	require.Nil(t, result)
@@ -125,8 +111,8 @@ func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 		StatusCode: 200,
 	}), fmt.Errorf("intentional error"))
 
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute)
 	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
@@ -150,8 +136,8 @@ func TestAllTheTimeSuccess(t *testing.T) {
 		StatusCode: 200,
 	}), nil)
 
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * -1)
 	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_WARN)
@@ -179,8 +165,8 @@ func TestAllTheTimeExpectationMismatch(t *testing.T) {
 		StatusCode: 200,
 	}), nil)
 
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * 1) // time not yet up - early exit
 	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
@@ -217,8 +203,8 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 		StatusCode: 200,
 	}), nil).Once()
 
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * 1) //time not yet up - no early exit if status is ok at least once
 	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
@@ -298,8 +284,8 @@ func TestAtLeastOnceExpectationMismatch(t *testing.T) {
 		StatusCode: 200,
 	}), nil).Once()
 
-	attack := MonitorStatusCheckAction{}
-	state := attack.NewEmptyState()
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * -1) //Simulate that the time has passed
 	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)

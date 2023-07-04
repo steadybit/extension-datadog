@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2022 Steadybit GmbH
+
+package extmonitor
+
+import (
+	"context"
+	"fmt"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/steadybit/action-kit/go/action_kit_api/v2"
+	"github.com/steadybit/action-kit/go/action_kit_sdk"
+	"github.com/steadybit/extension-datadog/config"
+	extension_kit "github.com/steadybit/extension-kit"
+	"github.com/steadybit/extension-kit/extbuild"
+	"github.com/steadybit/extension-kit/extutil"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+type MonitorDowntimeAction struct{}
+
+// Make sure action implements all required interfaces
+var (
+	_ action_kit_sdk.Action[MonitorDowntimeState]         = (*MonitorDowntimeAction)(nil)
+	_ action_kit_sdk.ActionWithStop[MonitorDowntimeState] = (*MonitorDowntimeAction)(nil)
+)
+
+type MonitorDowntimeState struct {
+	MonitorId  int64
+	End        time.Time
+	Notify     bool
+	DowntimeId *int64
+}
+
+func NewMonitorDowntimeAction() action_kit_sdk.Action[MonitorDowntimeState] {
+	return &MonitorDowntimeAction{}
+}
+func (m *MonitorDowntimeAction) NewEmptyState() MonitorDowntimeState {
+	return MonitorDowntimeState{}
+}
+
+func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
+	return action_kit_api.ActionDescription{
+		Id:          fmt.Sprintf("%s.mute", monitorTargetId),
+		Label:       "Monitor Downtime",
+		Description: "Start a Monitor Downtime for a given duration.",
+		Version:     extbuild.GetSemverVersionStringOrUnknown(),
+		Icon:        extutil.Ptr(monitorIcon),
+		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
+			TargetType:          monitorTargetId,
+			QuantityRestriction: extutil.Ptr(action_kit_api.All),
+			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+				{
+					Label: "by monitor name",
+					Query: "datadog.monitor.name=\"\"",
+				},
+			}),
+		}),
+		Category:    extutil.Ptr("monitoring"),
+		Kind:        action_kit_api.Other,
+		TimeControl: action_kit_api.External,
+		Parameters: []action_kit_api.ActionParameter{
+			{
+				Name:         "duration",
+				Label:        "Duration",
+				Description:  extutil.Ptr(""),
+				Type:         action_kit_api.Duration,
+				DefaultValue: extutil.Ptr("30s"),
+				Order:        extutil.Ptr(1),
+				Required:     extutil.Ptr(true),
+			},
+			{
+				Name:         "notify",
+				Label:        "Notify after Downtime",
+				Description:  extutil.Ptr("Should datadog notify after the Downtime if the monitor is in an unhealthy state?"),
+				Type:         action_kit_api.Boolean,
+				DefaultValue: extutil.Ptr("true"),
+				Order:        extutil.Ptr(2),
+				Required:     extutil.Ptr(true),
+			},
+		},
+		Stop: extutil.Ptr(action_kit_api.MutatingEndpointReference{}),
+	}
+}
+
+func (m *MonitorDowntimeAction) Prepare(_ context.Context, state *MonitorDowntimeState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
+	monitorId := request.Target.Attributes["datadog.monitor.id"]
+	if len(monitorId) == 0 {
+		return nil, extutil.Ptr(extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil))
+	}
+
+	parsedMonitorId, err := strconv.ParseInt(monitorId[0], 10, 64)
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to parse monitor ID '%s' as int64.", monitorId[0]), nil))
+	}
+
+	duration := request.Config["duration"].(float64)
+	end := time.Now().Add(time.Millisecond * time.Duration(duration))
+
+	state.MonitorId = parsedMonitorId
+	state.End = end
+	state.Notify = request.Config["notify"].(bool)
+	return nil, nil
+}
+
+func (m *MonitorDowntimeAction) Start(ctx context.Context, state *MonitorDowntimeState) (*action_kit_api.StartResult, error) {
+	return MonitorDowntimeStart(ctx, state, &config.Config)
+}
+
+func (m *MonitorDowntimeAction) Stop(ctx context.Context, state *MonitorDowntimeState) (*action_kit_api.StopResult, error) {
+	return MonitorDowntimeStop(ctx, state, &config.Config)
+}
+
+type MonitorDowntimeApi interface {
+	CreateDowntime(ctx context.Context, downtimeBody datadogV1.Downtime) (datadogV1.Downtime, *http.Response, error)
+	CancelDowntime(ctx context.Context, downtimeId int64) (*http.Response, error)
+}
+
+func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api MonitorDowntimeApi) (*action_kit_api.StartResult, error) {
+	var notifyEndType []datadogV1.NotifyEndType
+	if state.Notify {
+		notifyEndType = []datadogV1.NotifyEndType{datadogV1.NOTIFYENDTYPE_CANCELED, datadogV1.NOTIFYENDTYPE_EXPIRED}
+	}
+
+	downtimeRequest := datadogV1.Downtime{
+		MonitorId:                     *datadog.NewNullableInt64(&state.MonitorId),
+		Message:                       *datadog.NewNullableString(extutil.Ptr("Started by Steadybit")),
+		End:                           *datadog.NewNullableInt64(extutil.Ptr(state.End.UnixMilli())),
+		MuteFirstRecoveryNotification: extutil.Ptr(true),
+		NotifyEndTypes:                notifyEndType,
+	}
+
+	downtime, resp, err := api.CreateDowntime(ctx, downtimeRequest)
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to create Downtime for monitor %d. Full response: %v", state.MonitorId, resp), err))
+	}
+
+	state.DowntimeId = extutil.Ptr(downtime.GetId())
+
+	return &action_kit_api.StartResult{
+		Messages: &action_kit_api.Messages{
+			action_kit_api.Message{Level: extutil.Ptr(action_kit_api.Info), Message: fmt.Sprintf("Downtime started. (monitor %d, downtime %d)", state.MonitorId, *state.DowntimeId)},
+		},
+	}, nil
+}
+
+func MonitorDowntimeStop(ctx context.Context, state *MonitorDowntimeState, api MonitorDowntimeApi) (*action_kit_api.StopResult, error) {
+	if state.DowntimeId == nil {
+		return nil, nil
+	}
+
+	resp, err := api.CancelDowntime(ctx, *state.DowntimeId)
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to cancel Downtime (monitor %d, downtime %d). Full response: %v", state.MonitorId, *state.DowntimeId, resp), err))
+	}
+
+	return &action_kit_api.StopResult{
+		Messages: &action_kit_api.Messages{
+			action_kit_api.Message{Level: extutil.Ptr(action_kit_api.Info), Message: fmt.Sprintf("Downtime canceled. (monitor %d, downtime %d)", state.MonitorId, *state.DowntimeId)},
+		},
+	}, nil
+}
