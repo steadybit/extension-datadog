@@ -38,6 +38,10 @@ func TestMonitorDowntimePrepareExtractsState(t *testing.T) {
 				"datadog.monitor.id": {"12349876"},
 			},
 		}),
+		ExecutionContext: extutil.Ptr(action_kit_api.ExecutionContext{
+			ExperimentKey: extutil.Ptr("TEST-1"),
+			ExecutionId:   extutil.Ptr(4711),
+		}),
 	})
 	action := MonitorDowntimeAction{}
 	state := action.NewEmptyState()
@@ -49,6 +53,8 @@ func TestMonitorDowntimePrepareExtractsState(t *testing.T) {
 	require.Nil(t, result)
 	require.Nil(t, err)
 	require.Equal(t, int64(12349876), state.MonitorId)
+	require.Equal(t, *state.ExperimentKey, "TEST-1")
+	require.Equal(t, *state.ExecutionId, 4711)
 	require.True(t, state.End.After(time.Now()))
 	require.True(t, state.Notify)
 }
@@ -67,6 +73,8 @@ func TestMonitorDowntimeStartSuccess(t *testing.T) {
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute)
 	state.Notify = true
+	state.ExperimentKey = extutil.Ptr("TEST-1")
+	state.ExecutionId = extutil.Ptr(4711)
 
 	// When
 	result, err := MonitorDowntimeStart(context.Background(), &state, mockedApi)

@@ -28,10 +28,12 @@ var (
 )
 
 type MonitorDowntimeState struct {
-	MonitorId  int64
-	End        time.Time
-	Notify     bool
-	DowntimeId *int64
+	MonitorId     int64
+	End           time.Time
+	Notify        bool
+	DowntimeId    *int64
+	ExperimentUri *string
+	ExecutionUri  *string
 }
 
 func NewMonitorDowntimeAction() action_kit_sdk.Action[MonitorDowntimeState] {
@@ -102,6 +104,8 @@ func (m *MonitorDowntimeAction) Prepare(_ context.Context, state *MonitorDowntim
 	state.MonitorId = parsedMonitorId
 	state.End = end
 	state.Notify = request.Config["notify"].(bool)
+	state.ExperimentUri = request.ExecutionContext.ExperimentUri
+	state.ExecutionUri = request.ExecutionContext.ExecutionUri
 	return nil, nil
 }
 
@@ -124,9 +128,17 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 		notifyEndType = []datadogV1.NotifyEndType{datadogV1.NOTIFYENDTYPE_CANCELED, datadogV1.NOTIFYENDTYPE_EXPIRED}
 	}
 
+	message := "Created by ![Steadybit](https://downloads.steadybit.com/logo.jpg)"
+	if state.ExecutionUri != nil {
+		message = message + fmt.Sprintf("\n\n[Open Experiment](%s)", *state.ExperimentUri)
+	}
+	if state.ExecutionUri != nil {
+		message = message + fmt.Sprintf("\n[Open Execution](%s)", *state.ExecutionUri)
+	}
+
 	downtimeRequest := datadogV1.Downtime{
 		MonitorId:                     *datadog.NewNullableInt64(&state.MonitorId),
-		Message:                       *datadog.NewNullableString(extutil.Ptr("Started by Steadybit")),
+		Message:                       *datadog.NewNullableString(extutil.Ptr(message)),
 		End:                           *datadog.NewNullableInt64(extutil.Ptr(state.End.UnixMilli())),
 		MuteFirstRecoveryNotification: extutil.Ptr(true),
 		NotifyEndTypes:                notifyEndType,
