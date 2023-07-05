@@ -133,15 +133,16 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 		message = message + fmt.Sprintf("\n\n[Open Experiment](%s)", *state.ExperimentUri)
 	}
 	if state.ExecutionUri != nil {
-		message = message + fmt.Sprintf("\n[Open Execution](%s)", *state.ExecutionUri)
+		message = message + fmt.Sprintf("\n\n[Open Execution](%s)", *state.ExecutionUri)
 	}
 
 	downtimeRequest := datadogV1.Downtime{
 		MonitorId:                     *datadog.NewNullableInt64(&state.MonitorId),
 		Message:                       *datadog.NewNullableString(extutil.Ptr(message)),
-		End:                           *datadog.NewNullableInt64(extutil.Ptr(state.End.UnixMilli())),
+		End:                           *datadog.NewNullableInt64(extutil.Ptr(state.End.Unix())),
 		MuteFirstRecoveryNotification: extutil.Ptr(true),
 		NotifyEndTypes:                notifyEndType,
+		Scope:                         []string{"*"},
 	}
 
 	downtime, resp, err := api.CreateDowntime(ctx, downtimeRequest)
