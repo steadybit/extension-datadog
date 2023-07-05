@@ -39,8 +39,8 @@ func TestMonitorDowntimePrepareExtractsState(t *testing.T) {
 			},
 		}),
 		ExecutionContext: extutil.Ptr(action_kit_api.ExecutionContext{
-			ExperimentKey: extutil.Ptr("TEST-1"),
-			ExecutionId:   extutil.Ptr(4711),
+			ExperimentUri: extutil.Ptr("<uri-to-experiment>"),
+			ExecutionUri:  extutil.Ptr("<uri-to-execution>"),
 		}),
 	})
 	action := MonitorDowntimeAction{}
@@ -53,8 +53,8 @@ func TestMonitorDowntimePrepareExtractsState(t *testing.T) {
 	require.Nil(t, result)
 	require.Nil(t, err)
 	require.Equal(t, int64(12349876), state.MonitorId)
-	require.Equal(t, *state.ExperimentKey, "TEST-1")
-	require.Equal(t, *state.ExecutionId, 4711)
+	require.Equal(t, *state.ExperimentUri, "<uri-to-experiment>")
+	require.Equal(t, *state.ExecutionUri, "<uri-to-execution>")
 	require.True(t, state.End.After(time.Now()))
 	require.True(t, state.Notify)
 }
@@ -73,8 +73,8 @@ func TestMonitorDowntimeStartSuccess(t *testing.T) {
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute)
 	state.Notify = true
-	state.ExperimentKey = extutil.Ptr("TEST-1")
-	state.ExecutionId = extutil.Ptr(4711)
+	state.ExecutionUri = extutil.Ptr("<uri-to-execution>")
+	state.ExperimentUri = extutil.Ptr("<uri-to-experiment>")
 
 	// When
 	result, err := MonitorDowntimeStart(context.Background(), &state, mockedApi)
