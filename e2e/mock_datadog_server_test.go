@@ -21,6 +21,7 @@ func createMockDatadogServer() *httptest.Server {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}))
+	log.Info().Str("url", server.URL).Msg("Started Mock-Server")
 	return server
 }
 
