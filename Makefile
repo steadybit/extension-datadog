@@ -58,4 +58,4 @@ run: tidy build
 ## container: build the container image
 .PHONY: container
 container:
-	docker build -t extension-datadog:latest .
+	docker build --build-arg ADDITIONAL_BUILD_PARAMS="-cover" -t extension-datadog:latest .

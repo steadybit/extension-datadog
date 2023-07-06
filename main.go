@@ -33,6 +33,7 @@ func main() {
 	action_kit_sdk.RegisterAction(extmonitor.NewMonitorDowntimeAction())
 	extevents.RegisterEventListenerHandlers()
 
+	action_kit_sdk.RegisterCoverageEndpoints()
 	action_kit_sdk.InstallSignalHandler()
 
 	exthealth.SetReady(true)

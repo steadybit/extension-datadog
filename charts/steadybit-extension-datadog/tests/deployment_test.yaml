@@ -37,3 +37,10 @@ tests:
           name: env-secrets
     asserts:
       - matchSnapshot: {}
+  - it: manifest should match snapshot with mock server
+    set:
+      testing:
+        scheme: http
+        host: host.minikube.internal:8080
+    asserts:
+      - matchSnapshot: {}

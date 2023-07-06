@@ -52,6 +52,14 @@ spec:
                 secretKeyRef:
                   name: {{ include "datadog.secret.name" . }}
                   key: site-url
+            {{ if .Values.testing.scheme -}}
+            - name: STEADYBIT_EXTENSION_TESTING_SCHEME
+              value: {{ .Values.testing.scheme }}
+            {{ end }}
+            {{ if .Values.testing.host -}}
+            - name: STEADYBIT_EXTENSION_TESTING_HOST
+              value: {{ .Values.testing.host }}
+            {{ end }}
             {{- with .Values.extraEnv }}
               {{- toYaml . | nindent 12 }}
             {{- end }}

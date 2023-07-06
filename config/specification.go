@@ -16,6 +16,9 @@ type Specification struct {
 	SiteUrl        string `json:"siteUrl" split_words:"true" required:"true"`
 	ApiKey         string `json:"apiKey" split_words:"true" required:"true"`
 	ApplicationKey string `json:"applicationKey" split_words:"true" required:"true"`
+	// Only used for testing:
+	TestingScheme *string `json:"testingScheme" split_words:"true" required:"false"`
+	TestingHost   *string `json:"testingHost" split_words:"true" required:"false"`
 }
 
 func (s *Specification) WrapContextWithDatadogContextValues(ctx context.Context) context.Context {
@@ -43,44 +46,41 @@ func (s *Specification) WrapContextWithDatadogContextValues(ctx context.Context)
 	return ctx
 }
 
-func (s *Specification) ValidateCredentials(ctx context.Context) (datadogV1.AuthenticationValidationResponse, *http.Response, error) {
+func (s *Specification) createApiClient() *datadog.APIClient {
 	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV1.NewAuthenticationApi(apiClient)
+	if s.TestingHost != nil && s.TestingScheme != nil {
+		configuration.Scheme = *s.TestingScheme
+		configuration.Host = *s.TestingHost
+	}
+	return datadog.NewAPIClient(configuration)
+}
+
+func (s *Specification) ValidateCredentials(ctx context.Context) (datadogV1.AuthenticationValidationResponse, *http.Response, error) {
+	api := datadogV1.NewAuthenticationApi(s.createApiClient())
 	return api.Validate(s.WrapContextWithDatadogContextValues(ctx))
 }
 
 func (s *Specification) ListMonitors(ctx context.Context, params datadogV1.ListMonitorsOptionalParameters) ([]datadogV1.Monitor, *http.Response, error) {
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV1.NewMonitorsApi(apiClient)
+	api := datadogV1.NewMonitorsApi(s.createApiClient())
 	return api.ListMonitors(s.WrapContextWithDatadogContextValues(ctx), params)
 }
 
 func (s *Specification) GetMonitor(ctx context.Context, monitorId int64, params datadogV1.GetMonitorOptionalParameters) (datadogV1.Monitor, *http.Response, error) {
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV1.NewMonitorsApi(apiClient)
+	api := datadogV1.NewMonitorsApi(s.createApiClient())
 	return api.GetMonitor(s.WrapContextWithDatadogContextValues(ctx), monitorId, params)
 }
 
 func (s *Specification) CreateDowntime(ctx context.Context, downtimeBody datadogV1.Downtime) (datadogV1.Downtime, *http.Response, error) {
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV1.NewDowntimesApi(apiClient)
+	api := datadogV1.NewDowntimesApi(s.createApiClient())
 	return api.CreateDowntime(s.WrapContextWithDatadogContextValues(ctx), downtimeBody)
 }
 
 func (s *Specification) CancelDowntime(ctx context.Context, downtimeId int64) (*http.Response, error) {
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV1.NewDowntimesApi(apiClient)
+	api := datadogV1.NewDowntimesApi(s.createApiClient())
 	return api.CancelDowntime(s.WrapContextWithDatadogContextValues(ctx), downtimeId)
 }
 
 func (s *Specification) SendEvent(ctx context.Context, datadogEventBody datadogV1.EventCreateRequest) (datadogV1.EventCreateResponse, *http.Response, error) {
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV1.NewEventsApi(apiClient)
+	api := datadogV1.NewEventsApi(s.createApiClient())
 	return api.CreateEvent(s.WrapContextWithDatadogContextValues(ctx), datadogEventBody)
 }

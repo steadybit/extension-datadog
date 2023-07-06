@@ -1,3 +1,5 @@
 /extension-datadog
 extension-datadog.iml
 /coverage.out
+/extension-datadog.run.xml
+/e2e/e2e-coverage-docker.out

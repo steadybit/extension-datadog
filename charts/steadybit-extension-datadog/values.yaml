@@ -14,6 +14,12 @@ datadog:
   # datadog.existingSecret -- If defined, will skip secret creation and instead assume that the referenced secret contains the keys api-key, application-key, site-parameter and site-url.
   existingSecret: null
 
+testing:
+  # testing.scheme: Override the Datadog API scheme. Useful for testing.
+  scheme: null
+  # testing.host: Override the Datadog API host. Useful for testing.
+  host: null
+
 image:
   # image.name -- The container image to use for the Steadybit Datadog extension.
   name: ghcr.io/steadybit/extension-datadog
