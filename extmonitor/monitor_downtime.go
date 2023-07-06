@@ -45,8 +45,8 @@ func (m *MonitorDowntimeAction) NewEmptyState() MonitorDowntimeState {
 
 func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
-		Id:          fmt.Sprintf("%s.mute", monitorTargetId),
-		Label:       "Monitor Downtime",
+		Id:          fmt.Sprintf("%s.downtime", monitorTargetId),
+		Label:       "Create Downtime",
 		Description: "Start a Monitor Downtime for a given duration.",
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Icon:        extutil.Ptr(monitorIcon),
