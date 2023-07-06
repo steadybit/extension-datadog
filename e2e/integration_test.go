@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/steadybit/action-kit/go/action_kit_test/e2e"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
+	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -15,9 +16,11 @@ import (
 )
 
 func TestWithMinikube(t *testing.T) {
+	extlogging.InitZeroLog()
 	server := createMockDatadogServer()
 	defer server.Close()
-	port := strings.SplitAfter(server.URL, ":")[2]
+	split := strings.SplitAfter(server.URL, ":")
+	port := split[len(split)-1]
 
 	extFactory := e2e.HelmExtensionFactory{
 		Name: "extension-datadog",

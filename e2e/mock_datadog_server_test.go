@@ -1,28 +1,38 @@
 package e2e
 
 import (
+	"fmt"
 	"github.com/rs/zerolog/log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 )
 
 func createMockDatadogServer() *httptest.Server {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info().Str("path", r.URL.Path).Str("method", r.Method).Str("query", r.URL.RawQuery).Msg("Request received")
-		if r.URL.Path == "/api/v1/validate" {
-			w.WriteHeader(http.StatusOK)
-			w.Write(apiV1Validate())
-		} else if r.URL.Path == "/api/v1/monitor" {
-			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-			w.WriteHeader(http.StatusOK)
-			w.Write(apiV1Monitor(page))
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-	}))
+	listener, err := net.Listen("tcp", "0.0.0.0:0")
+	if err != nil {
+		panic(fmt.Sprintf("httptest: failed to listen: %v", err))
+	}
+	server := httptest.Server{
+		Listener: listener,
+		Config: &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Info().Str("path", r.URL.Path).Str("method", r.Method).Str("query", r.URL.RawQuery).Msg("Request received")
+			if r.URL.Path == "/api/v1/validate" {
+				w.WriteHeader(http.StatusOK)
+				w.Write(apiV1Validate())
+			} else if r.URL.Path == "/api/v1/monitor" {
+				page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+				w.WriteHeader(http.StatusOK)
+				w.Write(apiV1Monitor(page))
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+		})},
+	}
+	server.Start()
 	log.Info().Str("url", server.URL).Msg("Started Mock-Server")
-	return server
+	return &server
 }
 
 func apiV1Validate() []byte {
