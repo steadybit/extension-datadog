@@ -128,7 +128,7 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 		notifyEndType = []datadogV1.NotifyEndType{datadogV1.NOTIFYENDTYPE_CANCELED, datadogV1.NOTIFYENDTYPE_EXPIRED}
 	}
 
-	message := "Created by ![Steadybit](https://downloads.steadybit.com/logo.jpg)"
+	message := "Created by ![Steadybit](https://downloads.steadybit.com/logo-extension-datadog.jpg)"
 	if state.ExecutionUri != nil {
 		message = message + fmt.Sprintf("\n\n[Open Experiment](%s)", *state.ExperimentUri)
 	}
