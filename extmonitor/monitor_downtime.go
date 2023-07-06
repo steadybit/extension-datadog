@@ -75,7 +75,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 			},
 			{
 				Name:         "notify",
-				Label:        "Notify after Downtime",
+				Label:        "Notify after Downtime if unhealthy",
 				Description:  extutil.Ptr("Should datadog notify after the Downtime if the monitor is in an unhealthy state?"),
 				Type:         action_kit_api.Boolean,
 				DefaultValue: extutil.Ptr("true"),
