@@ -84,7 +84,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 						Name:                 "Name",
 						PreparedTime:         eventTime,
 						StartedTime:          startedTime,
-						State:                event_kit_api.Created,
+						State:                event_kit_api.ExperimentExecutionStateCreated,
 					}),
 					Id: uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
 					Principal: event_kit_api.UserPrincipal{
@@ -114,7 +114,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"team_key:test",
 				"tenant_name:name",
 				"tenant_key:key",
-				"execution_id:42.000000",
+				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
@@ -145,7 +145,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 						Name:                 "Name",
 						PreparedTime:         eventTime,
 						StartedTime:          startedTime,
-						State:                event_kit_api.Created,
+						State:                event_kit_api.ExperimentExecutionStateCreated,
 					}),
 					Id: uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
 					Principal: event_kit_api.AccessTokenPrincipal{
@@ -173,7 +173,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"team_key:test",
 				"tenant_name:name",
 				"tenant_key:key",
-				"execution_id:42.000000",
+				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
@@ -203,7 +203,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 						Name:                 "Name",
 						PreparedTime:         eventTime,
 						StartedTime:          startedTime,
-						State:                event_kit_api.Created,
+						State:                event_kit_api.ExperimentExecutionStateCreated,
 					}),
 					Id:        uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
 					Principal: nil,
@@ -228,7 +228,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"team_key:test",
 				"tenant_name:name",
 				"tenant_key:key",
-				"execution_id:42.000000",
+				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
@@ -241,6 +241,99 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := convertSteadybitEventToDataDogEventTags(tt.args.event); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("convertSteadybitEventToDataDogEventTags() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getStepTags(t *testing.T) {
+	type args struct {
+		w             http.ResponseWriter
+		stepExecution event_kit_api.ExperimentStepExecution
+	}
+
+	endedTime := time.Date(2021, 1, 1, 0, 2, 0, 0, time.UTC)
+	startedTime := time.Date(2021, 1, 1, 0, 1, 0, 0, time.UTC)
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "Successfully convert action step to datadog tags",
+			args: args{
+				stepExecution: event_kit_api.ExperimentStepExecution{
+					Id:          uuid.UUID{},
+					Type:        event_kit_api.Action,
+					ActionId:    extutil.Ptr("com.github.steadybit.action.example"),
+					State:       event_kit_api.ExperimentStepExecutionStateFailed,
+					EndedTime:   extutil.Ptr(endedTime),
+					StartedTime: extutil.Ptr(startedTime),
+					TargetExecutions: extutil.Ptr([]event_kit_api.ExperimentStepExecutionTarget{
+						{
+							AgentHostname:    "Agent-1",
+							TargetAttributes: nil,
+							TargetName:       "Target-1",
+							TargetType:       "example-target-type",
+						},
+						{
+							AgentHostname:    "Agent-2",
+							TargetAttributes: nil,
+							TargetName:       "Target-2",
+							TargetType:       "example-target-type",
+						},
+					}),
+				},
+			},
+			want: []string{
+				"step_type:action",
+				"step_state:failed",
+				"step_started_time:2021-01-01T00:01:00Z",
+				"step_ended_time:2021-01-01T00:02:00Z",
+				"step_action_id:com.github.steadybit.action.example",
+				"step_target_count:2",
+				"step_target_0_name:Target-1",
+				"step_target_1_name:Target-2",
+			},
+		},
+		{
+			name: "Successfully convert wait step to datadog tags",
+			args: args{
+				stepExecution: event_kit_api.ExperimentStepExecution{
+					Id:          uuid.UUID{},
+					Type:        event_kit_api.Wait,
+					State:       event_kit_api.ExperimentStepExecutionStateCompleted,
+					EndedTime:   extutil.Ptr(endedTime),
+					StartedTime: extutil.Ptr(startedTime),
+				},
+			},
+			want: []string{
+				"step_type:wait",
+				"step_state:completed",
+				"step_started_time:2021-01-01T00:01:00Z",
+				"step_ended_time:2021-01-01T00:02:00Z",
+			},
+		},
+		{
+			name: "Successfully convert not yet started wait step to datadog tags",
+			args: args{
+				stepExecution: event_kit_api.ExperimentStepExecution{
+					Id:    uuid.UUID{},
+					Type:  event_kit_api.Wait,
+					State: event_kit_api.ExperimentStepExecutionStatePrepared,
+				},
+			},
+			want: []string{
+				"step_type:wait",
+				"step_state:prepared",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getStepTags(tt.args.stepExecution); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getStepTags() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -5,6 +5,7 @@
  - Links to Datadogs monitors are now using the timeframe of the experiment execution.
  - "Monitor Status Check" has a new parameter `Status Check Mode`. Supported values are `All the time` (default) and `At least once`.
  - New Action to create a Downtime for a monitor during an experiment execution.
+ - Details about step executions are sent to Datadog as events.
 
 ## v1.6.0
 
