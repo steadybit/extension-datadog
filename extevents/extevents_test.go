@@ -260,7 +260,7 @@ func Test_getStepTags(t *testing.T) {
 		want []string
 	}{
 		{
-			name: "Successfully convert action step to datadog tags",
+			name: "Successfully get tags for started attack",
 			args: args{
 				stepExecution: event_kit_api.ExperimentStepExecution{
 					Id:          uuid.UUID{},
@@ -275,7 +275,6 @@ func Test_getStepTags(t *testing.T) {
 				},
 			},
 			want: []string{
-				"step_type:action",
 				"step_state:failed",
 				"step_started_time:2021-01-01T00:01:00Z",
 				"step_ended_time:2021-01-01T00:02:00Z",
@@ -285,35 +284,19 @@ func Test_getStepTags(t *testing.T) {
 			},
 		},
 		{
-			name: "Successfully convert wait step to datadog tags",
+			name: "Successfully get tags for not yet started attack",
 			args: args{
 				stepExecution: event_kit_api.ExperimentStepExecution{
-					Id:          uuid.UUID{},
-					Type:        event_kit_api.Wait,
-					State:       event_kit_api.ExperimentStepExecutionStateCompleted,
-					EndedTime:   extutil.Ptr(endedTime),
-					StartedTime: extutil.Ptr(startedTime),
+					Id:         uuid.UUID{},
+					Type:       event_kit_api.Action,
+					ActionId:   extutil.Ptr("com.github.steadybit.action.example"),
+					ActionKind: extutil.Ptr(event_kit_api.Attack),
+					State:      event_kit_api.ExperimentStepExecutionStateCompleted,
 				},
 			},
 			want: []string{
-				"step_type:wait",
 				"step_state:completed",
-				"step_started_time:2021-01-01T00:01:00Z",
-				"step_ended_time:2021-01-01T00:02:00Z",
-			},
-		},
-		{
-			name: "Successfully convert not yet started wait step to datadog tags",
-			args: args{
-				stepExecution: event_kit_api.ExperimentStepExecution{
-					Id:    uuid.UUID{},
-					Type:  event_kit_api.Wait,
-					State: event_kit_api.ExperimentStepExecutionStatePrepared,
-				},
-			},
-			want: []string{
-				"step_type:wait",
-				"step_state:prepared",
+				"step_action_id:com.github.steadybit.action.example",
 			},
 		},
 	}
@@ -359,14 +342,15 @@ func Test_getTargetTags(t *testing.T) {
 				},
 			},
 			want: []string{
-				"host:host-123",
-				"container_name:example-c1",
-				"cluster_name:dev-cluster",
 				"kube_cluster_name:dev-cluster",
-				"namespace:namespace",
 				"kube_namespace:namespace",
+				"kube_deployment:example",
+				"namespace:namespace",
 				"pod_name:example-4711-123",
 				"deployment:example",
+				"container_name:example-c1",
+				"cluster_name:dev-cluster",
+				"host:host-123-dev-cluster",
 				"aws_region:eu-central-1",
 				"aws_zone:eu-central-1a",
 				"aws_account:123456789",

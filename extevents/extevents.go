@@ -277,7 +277,6 @@ func convertSteadybitEventToDataDogEventTags(event event_kit_api.EventRequestBod
 
 func getStepTags(step event_kit_api.ExperimentStepExecution) []string {
 	var tags []string
-	tags = append(tags, "step_type:"+string(step.Type))
 	tags = append(tags, "step_state:"+string(step.State))
 	if step.StartedTime != nil {
 		tags = append(tags, "step_started_time:"+step.StartedTime.Format(time.RFC3339))
@@ -299,21 +298,43 @@ func getStepTags(step event_kit_api.ExperimentStepExecution) []string {
 
 func getTargetTags(target event_kit_api.ExperimentStepExecutionTarget) []string {
 	var tags []string
-	tags = append(tags, translateToDatadog(target, "container.host", "host")...)
-	tags = append(tags, translateToDatadog(target, "host.hostname", "host")...)
-	tags = append(tags, translateToDatadog(target, "application.hostname", "host")...)
-	tags = append(tags, translateToDatadog(target, "k8s.node.name", "host")...)
-	tags = append(tags, translateToDatadog(target, "k8s.container.name", "container_name")...)
-	tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "cluster_name")...)
-	tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "kube_cluster_name")...)
-	tags = append(tags, translateToDatadog(target, "k8s.namespace", "namespace")...)
-	tags = append(tags, translateToDatadog(target, "k8s.namespace", "kube_namespace")...)
-	tags = append(tags, translateToDatadog(target, "k8s.pod.name", "pod_name")...)
-	tags = append(tags, translateToDatadog(target, "k8s.deployment", "deployment")...)
+	if _, ok := target.TargetAttributes["k8s.cluster-name"]; ok {
+		//"kube_"-tags
+		tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "kube_cluster_name")...)
+		tags = append(tags, translateToDatadog(target, "k8s.namespace", "kube_namespace")...)
+		tags = append(tags, translateToDatadog(target, "k8s.deployment", "kube_deployment")...)
+		tags = append(tags, translateToDatadog(target, "k8s.namespace", "namespace")...)
+		tags = append(tags, translateToDatadog(target, "k8s.pod.name", "pod_name")...)
+		tags = append(tags, translateToDatadog(target, "k8s.deployment", "deployment")...)
+		tags = append(tags, translateToDatadog(target, "k8s.container.name", "container_name")...)
+		tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "cluster_name")...)
+	}
+
+	tags = append(tags, getHostnameTag(target)...)
+	tags = append(tags, translateToDatadog(target, "container.id.stripped", "container_id")...)
+
+	//AWS tags
 	tags = append(tags, translateToDatadog(target, "aws.region", "aws_region")...)
 	tags = append(tags, translateToDatadog(target, "aws.zone", "aws_zone")...)
 	tags = append(tags, translateToDatadog(target, "aws.account", "aws_account")...)
-	return removeDuplicates(tags)
+
+	return tags
+}
+
+func getHostnameTag(target event_kit_api.ExperimentStepExecutionTarget) []string {
+	var tags []string
+	tags = append(tags, translateToDatadog(target, "container.host", "host")...)
+	tags = append(tags, translateToDatadog(target, "host.hostname", "host")...)
+	tags = append(tags, translateToDatadog(target, "application.hostname", "host")...)
+	tags = removeDuplicates(tags)
+
+	//Add cluster-name to host -> https://docs.datadoghq.com/containers/guide/kubernetes-cluster-name-detection/
+	if values, ok := target.TargetAttributes["k8s.cluster-name"]; ok {
+		if len(tags) == 1 && len(values) == 1 {
+			tags[0] = tags[0] + "-" + values[0]
+		}
+	}
+	return tags
 }
 
 func translateToDatadog(target event_kit_api.ExperimentStepExecutionTarget, steadybitAttribute string, datadogTag string) []string {
