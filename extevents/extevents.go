@@ -121,13 +121,15 @@ func onExperimentStepStarted(w http.ResponseWriter, r *http.Request, body []byte
 			lastStartedStepsMux.Lock()
 			lastStartedSteps[event.ExperimentExecution.ExecutionId] = *step.StartedTime
 			lastStartedStepsMux.Unlock()
-			tags := convertSteadybitEventToDataDogEventTags(event)
-			if tags == nil {
+			executionAndStepTags := convertSteadybitEventToDataDogEventTags(event)
+			if executionAndStepTags == nil {
 				return
 			}
-			tags = append(tags, getStepTags(step)...)
+			executionAndStepTags = append(executionAndStepTags, getStepTags(step)...)
 			for _, target := range *step.TargetExecutions {
-				tags = append(tags, getTargetTags(target)...)
+				var allTags []string
+				copy(allTags, executionAndStepTags)
+				allTags = append(allTags, getTargetTags(target)...)
 				actionName := *step.ActionId
 				if step.ActionName != nil {
 					actionName = *step.ActionName
@@ -144,7 +146,7 @@ func onExperimentStepStarted(w http.ResponseWriter, r *http.Request, body []byte
 						actionName,
 						getTargetName(target),
 					),
-					Tags:           tags,
+					Tags:           allTags,
 					SourceTypeName: extutil.Ptr("Steadybit"),
 					AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
 				}
