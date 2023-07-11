@@ -266,23 +266,12 @@ func Test_getStepTags(t *testing.T) {
 					Id:          uuid.UUID{},
 					Type:        event_kit_api.Action,
 					ActionId:    extutil.Ptr("com.github.steadybit.action.example"),
+					ActionName:  extutil.Ptr("example-action"),
+					ActionKind:  extutil.Ptr(event_kit_api.Attack),
+					CustomLabel: extutil.Ptr("My very own label"),
 					State:       event_kit_api.ExperimentStepExecutionStateFailed,
 					EndedTime:   extutil.Ptr(endedTime),
 					StartedTime: extutil.Ptr(startedTime),
-					TargetExecutions: extutil.Ptr([]event_kit_api.ExperimentStepExecutionTarget{
-						{
-							AgentHostname:    "Agent-1",
-							TargetAttributes: nil,
-							TargetName:       "Target-1",
-							TargetType:       "example-target-type",
-						},
-						{
-							AgentHostname:    "Agent-2",
-							TargetAttributes: nil,
-							TargetName:       "Target-2",
-							TargetType:       "example-target-type",
-						},
-					}),
 				},
 			},
 			want: []string{
@@ -291,9 +280,8 @@ func Test_getStepTags(t *testing.T) {
 				"step_started_time:2021-01-01T00:01:00Z",
 				"step_ended_time:2021-01-01T00:02:00Z",
 				"step_action_id:com.github.steadybit.action.example",
-				"step_target_count:2",
-				"step_target_0_name:Target-1",
-				"step_target_1_name:Target-2",
+				"step_action_name:example-action",
+				"step_custom_label:My very own label",
 			},
 		},
 		{
@@ -334,6 +322,96 @@ func Test_getStepTags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getStepTags(tt.args.stepExecution); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getStepTags() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getTargetTags(t *testing.T) {
+	type args struct {
+		w      http.ResponseWriter
+		target event_kit_api.ExperimentStepExecutionTarget
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "Successfully get tag for container targets",
+			args: args{
+				target: event_kit_api.ExperimentStepExecutionTarget{
+					AgentHostname: "Agent-1",
+					TargetAttributes: map[string][]string{
+						"k8s.container.name": {"example-c1"},
+						"container.host":     {"host-123"},
+						"k8s.namespace":      {"namespace"},
+						"k8s.deployment":     {"example"},
+						"k8s.pod.name":       {"example-4711-123"},
+						"k8s.cluster-name":   {"dev-cluster"},
+						"aws.zone":           {"eu-central-1a"},
+						"aws.region":         {"eu-central-1"},
+						"aws.account":        {"123456789"},
+					},
+					TargetName: "Container",
+					TargetType: "container",
+				},
+			},
+			want: []string{
+				"host:host-123",
+				"container_name:example-c1",
+				"cluster_name:dev-cluster",
+				"kube_cluster_name:dev-cluster",
+				"namespace:namespace",
+				"kube_namespace:namespace",
+				"pod_name:example-4711-123",
+				"deployment:example",
+				"aws_region:eu-central-1",
+				"aws_zone:eu-central-1a",
+				"aws_account:123456789",
+			},
+		},
+		{
+			name: "Successfully deduplicate tags",
+			args: args{
+				target: event_kit_api.ExperimentStepExecutionTarget{
+					AgentHostname: "Agent-1",
+					TargetAttributes: map[string][]string{
+						"container.host": {"host-123"},
+						"k8s.node.name":  {"host-123"},
+					},
+					TargetName: "Container",
+					TargetType: "container",
+				},
+			},
+			want: []string{
+				"host:host-123",
+			},
+		},
+		{
+			name: "Ignore multiple values",
+			args: args{
+				target: event_kit_api.ExperimentStepExecutionTarget{
+					AgentHostname: "Agent-1",
+					TargetAttributes: map[string][]string{
+						"host.hostname": {"Host-1"},
+						"k8s.namespace": {"namespace-1", "namespace-2", "namespace-3"},
+					},
+					TargetName: "Host",
+					TargetType: "host",
+				},
+			},
+			want: []string{
+				"host:Host-1",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getTargetTags(tt.args.target); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getTargetTags() = %v, want %v", got, tt.want)
 			}
 		})
 	}

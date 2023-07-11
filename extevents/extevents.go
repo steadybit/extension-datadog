@@ -15,7 +15,6 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -50,6 +49,7 @@ func onExperimentStarted(w http.ResponseWriter, r *http.Request, body []byte) {
 			event.ExperimentExecution.ExecutionId),
 		Tags:           tags,
 		SourceTypeName: extutil.Ptr("Steadybit"),
+		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
 	}
 
 	SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
@@ -87,6 +87,7 @@ func onExperimentCompleted(w http.ResponseWriter, r *http.Request, body []byte) 
 			duration.Seconds()),
 		Tags:           tags,
 		SourceTypeName: extutil.Ptr("Steadybit"),
+		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
 	}
 
 	SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
@@ -113,7 +114,10 @@ func onExperimentStepStarted(w http.ResponseWriter, r *http.Request, body []byte
 	}
 
 	for _, step := range event.ExperimentExecution.Steps {
-		if step.Type != event_kit_api.Wait && step.StartedTime != nil && step.StartedTime.After(lastStartedStep) {
+		if step.ActionKind == nil || *step.ActionKind != event_kit_api.Attack {
+			continue
+		}
+		if step.StartedTime != nil && step.StartedTime.After(lastStartedStep) {
 			lastStartedStepsMux.Lock()
 			lastStartedSteps[event.ExperimentExecution.ExecutionId] = *step.StartedTime
 			lastStartedStepsMux.Unlock()
@@ -122,25 +126,30 @@ func onExperimentStepStarted(w http.ResponseWriter, r *http.Request, body []byte
 				return
 			}
 			tags = append(tags, getStepTags(step)...)
-			var targetSummary string
 			for _, target := range *step.TargetExecutions {
-				targetSummary += fmt.Sprintf("\n- `%s`", target.TargetName)
+				tags = append(tags, getTargetTags(target)...)
+				actionName := *step.ActionId
+				if step.ActionName != nil {
+					actionName = *step.ActionName
+				}
+				if step.CustomLabel != nil {
+					actionName = *step.CustomLabel
+				}
+				datadogEventBody := datadogV1.EventCreateRequest{
+					Title: fmt.Sprintf("Experiment '%s' - Attack started", event.ExperimentExecution.ExperimentKey),
+					Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) - Attack `%s` started.\n\nTarget:%s\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
+						event.ExperimentExecution.ExperimentKey,
+						event.ExperimentExecution.Name,
+						event.ExperimentExecution.ExecutionId,
+						actionName,
+						getTargetName(target),
+					),
+					Tags:           tags,
+					SourceTypeName: extutil.Ptr("Steadybit"),
+					AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+				}
+				SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
 			}
-
-			datadogEventBody := datadogV1.EventCreateRequest{
-				Title: fmt.Sprintf("Experiment '%s' - Step started", event.ExperimentExecution.ExperimentKey),
-				Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) - Step `%s` started.\n\nTargets:%s\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
-					event.ExperimentExecution.ExperimentKey,
-					event.ExperimentExecution.Name,
-					event.ExperimentExecution.ExecutionId,
-					*step.ActionId,
-					targetSummary,
-				),
-				Tags:           tags,
-				SourceTypeName: extutil.Ptr("Steadybit"),
-			}
-
-			SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
 		}
 	}
 	exthttp.WriteBody(w, "{}")
@@ -160,6 +169,9 @@ func onExperimentStepCompleted(w http.ResponseWriter, r *http.Request, body []by
 	}
 
 	for _, step := range event.ExperimentExecution.Steps {
+		if step.ActionKind == nil || *step.ActionKind != event_kit_api.Attack {
+			continue
+		}
 		if step.Type != event_kit_api.Wait && step.EndedTime != nil && step.EndedTime.After(lastCompletedStep) && step.StartedTime != nil {
 			lastCompletedStepsMux.Lock()
 			lastCompletedSteps[event.ExperimentExecution.ExecutionId] = *step.EndedTime
@@ -170,30 +182,44 @@ func onExperimentStepCompleted(w http.ResponseWriter, r *http.Request, body []by
 			}
 			tags = append(tags, getStepTags(step)...)
 			duration := step.EndedTime.Sub(*step.StartedTime)
-			var targetSummary string
+
 			for _, target := range *step.TargetExecutions {
-				targetSummary += fmt.Sprintf("\n- `%s`", target.TargetName)
+				tags = append(tags, getTargetTags(target)...)
+				actionName := *step.ActionId
+				if step.ActionName != nil {
+					actionName = *step.ActionName
+				}
+				if step.CustomLabel != nil {
+					actionName = *step.CustomLabel
+				}
+				datadogEventBody := datadogV1.EventCreateRequest{
+					Title: fmt.Sprintf("Experiment '%s' - Attack ended", event.ExperimentExecution.ExperimentKey),
+					Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) - Attack `%s` ended with state `%s` after %.2f seconds.\n\nTarget:%s\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
+						event.ExperimentExecution.ExperimentKey,
+						event.ExperimentExecution.Name,
+						event.ExperimentExecution.ExecutionId,
+						actionName,
+						step.State,
+						duration.Seconds(),
+						getTargetName(target),
+					),
+					Tags:           tags,
+					SourceTypeName: extutil.Ptr("Steadybit"),
+					AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+				}
+				SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
 			}
 
-			datadogEventBody := datadogV1.EventCreateRequest{
-				Title: fmt.Sprintf("Experiment '%s' - Step ended", event.ExperimentExecution.ExperimentKey),
-				Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) - Step `%s` ended with state `%s` after %.2f seconds.\n\nTargets:%s\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
-					event.ExperimentExecution.ExperimentKey,
-					event.ExperimentExecution.Name,
-					event.ExperimentExecution.ExecutionId,
-					*step.ActionId,
-					step.State,
-					duration.Seconds(),
-					targetSummary,
-				),
-				Tags:           tags,
-				SourceTypeName: extutil.Ptr("Steadybit"),
-			}
-
-			SendDatadogEvent(r.Context(), &config.Config, datadogEventBody)
 		}
 	}
 	exthttp.WriteBody(w, "{}")
+}
+
+func getTargetName(target event_kit_api.ExperimentStepExecutionTarget) string {
+	if values, ok := target.TargetAttributes["steadybit.label"]; ok {
+		return values[0]
+	}
+	return target.TargetName
 }
 
 func convertSteadybitEventToDataDogEventTags(event event_kit_api.EventRequestBody) []string {
@@ -261,12 +287,56 @@ func getStepTags(step event_kit_api.ExperimentStepExecution) []string {
 	}
 	if step.Type == event_kit_api.Action {
 		tags = append(tags, "step_action_id:"+*step.ActionId)
-		tags = append(tags, "step_target_count:"+strconv.Itoa(len(*step.TargetExecutions)))
-		for targetIndex, target := range *step.TargetExecutions {
-			tags = append(tags, fmt.Sprintf("step_target_%d_name:%s", targetIndex, target.TargetName))
+	}
+	if step.ActionName != nil {
+		tags = append(tags, "step_action_name:"+*step.ActionName)
+	}
+	if step.CustomLabel != nil {
+		tags = append(tags, "step_custom_label:"+*step.CustomLabel)
+	}
+	return tags
+}
+
+func getTargetTags(target event_kit_api.ExperimentStepExecutionTarget) []string {
+	var tags []string
+	tags = append(tags, translateToDatadog(target, "container.host", "host")...)
+	tags = append(tags, translateToDatadog(target, "host.hostname", "host")...)
+	tags = append(tags, translateToDatadog(target, "application.hostname", "host")...)
+	tags = append(tags, translateToDatadog(target, "k8s.node.name", "host")...)
+	tags = append(tags, translateToDatadog(target, "k8s.container.name", "container_name")...)
+	tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "cluster_name")...)
+	tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "kube_cluster_name")...)
+	tags = append(tags, translateToDatadog(target, "k8s.namespace", "namespace")...)
+	tags = append(tags, translateToDatadog(target, "k8s.namespace", "kube_namespace")...)
+	tags = append(tags, translateToDatadog(target, "k8s.pod.name", "pod_name")...)
+	tags = append(tags, translateToDatadog(target, "k8s.deployment", "deployment")...)
+	tags = append(tags, translateToDatadog(target, "aws.region", "aws_region")...)
+	tags = append(tags, translateToDatadog(target, "aws.zone", "aws_zone")...)
+	tags = append(tags, translateToDatadog(target, "aws.account", "aws_account")...)
+	return removeDuplicates(tags)
+}
+
+func translateToDatadog(target event_kit_api.ExperimentStepExecutionTarget, steadybitAttribute string, datadogTag string) []string {
+	var tags []string
+	if values, ok := target.TargetAttributes[steadybitAttribute]; ok {
+		//We don't want to add one-to-many attributes to datadog. For example when attacking a host, we don't want to add all namespaces or pods which are running on that host.
+		if (len(values)) == 1 {
+			tags = append(tags, datadogTag+":"+values[0])
 		}
 	}
 	return tags
+}
+
+func removeDuplicates(tags []string) []string {
+	allKeys := make(map[string]bool)
+	var result []string
+	for _, tag := range tags {
+		if _, value := allKeys[tag]; !value {
+			allKeys[tag] = true
+			result = append(result, tag)
+		}
+	}
+	return result
 }
 
 func parseBodyToEventRequestBody(body []byte) (event_kit_api.EventRequestBody, error) {

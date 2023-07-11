@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.1
+ 
+ - Events are now being send for every target of the experiment execution, linking to the target (host and container) and therefore showing also metrics.
+
 ## v1.7.0
 
  - Links to Datadogs monitors are now using the timeframe of the experiment execution.
