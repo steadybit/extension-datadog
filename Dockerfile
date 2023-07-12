@@ -3,34 +3,23 @@
 ##
 ## Build
 ##
-FROM golang:1.20-alpine AS build
+FROM goreleaser/goreleaser:v1.19.2 AS build
 
-ARG NAME
-ARG VERSION
-ARG REVISION
-ARG ADDITIONAL_BUILD_PARAMS
+ARG BUILD_WITH_COVERAGE
 
 WORKDIR /app
 
-RUN apk add build-base
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN go build \
-    -ldflags="\
-    -X 'github.com/steadybit/extension-kit/extbuild.ExtensionName=${NAME}' \
-    -X 'github.com/steadybit/extension-kit/extbuild.Version=${VERSION}' \
-    -X 'github.com/steadybit/extension-kit/extbuild.Revision=${REVISION}'" \
-    -o ./extension \
-    ${ADDITIONAL_BUILD_PARAMS}
-
+RUN goreleaser build --snapshot --single-target -o extension
 ##
 ## Runtime
 ##
-FROM alpine:3.16
+FROM alpine:3.17
 
 ARG USERNAME=steadybit
 ARG USER_UID=10000
@@ -43,7 +32,6 @@ WORKDIR /
 
 COPY --from=build /app/extension /extension
 
-EXPOSE 8090
-EXPOSE 8091
+EXPOSE 8090 8091
 
 ENTRYPOINT ["/extension"]

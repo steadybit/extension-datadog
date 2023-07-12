@@ -1,0 +1,18 @@
+[Unit]
+Description="steadybit extension datadog"
+After=syslog.target
+
+[Service]
+Type=simple
+ExecStart=/opt/steadybit/extension-datadog/extension-datadog
+EnvironmentFile=/etc/steadybit/extension-datadog
+User=steadybit
+Group=steadybit
+SuccessExitStatus=0 143
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:/var/log/steadybit-extension-datadog.log
+StandardError=append:/var/log/steadybit-extension-datadog.log
+
+[Install]
+WantedBy=multi-user.target

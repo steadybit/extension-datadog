@@ -1,0 +1,12 @@
+STEADYBIT_LOG_LEVEL=info
+STEADYBIT_LOG_FORMAT=text
+STEADYBIT_EXTENSION_UNIX_SOCKET=/run/steadybit/extension-datadog.sock
+#
+# TODO:
+# Please configure the api key and application key for your datadog account
+# For more information visit https://github.com/steadybit/extension-datadog
+#
+STEADYBIT_EXTENSION_API_KEY=
+STEADYBIT_EXTENSION_APPLICATION_KEY=
+STEADYBIT_EXTENSION_SITE_PARAMETER=
+STEADYBIT_EXTENSION_SITE_URL=

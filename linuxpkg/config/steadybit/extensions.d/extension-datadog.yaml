@@ -1,0 +1,4 @@
+unixSocket: /run/steadybit/extension-datadog.sock
+types:
+  - ACTION
+  - DISCOVERY
