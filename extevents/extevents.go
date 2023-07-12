@@ -127,9 +127,10 @@ func onExperimentStepStarted(w http.ResponseWriter, r *http.Request, body []byte
 			}
 			executionAndStepTags = append(executionAndStepTags, getStepTags(step)...)
 			for _, target := range *step.TargetExecutions {
-				var allTags []string
-				copy(allTags, executionAndStepTags)
-				allTags = append(allTags, getTargetTags(target)...)
+				targetTags := getTargetTags(target)
+				allTags := make([]string, 0, len(executionAndStepTags)+len(targetTags))
+				allTags = append(allTags, executionAndStepTags...)
+				allTags = append(allTags, targetTags...)
 				actionName := *step.ActionId
 				if step.ActionName != nil {
 					actionName = *step.ActionName
@@ -178,15 +179,18 @@ func onExperimentStepCompleted(w http.ResponseWriter, r *http.Request, body []by
 			lastCompletedStepsMux.Lock()
 			lastCompletedSteps[event.ExperimentExecution.ExecutionId] = *step.EndedTime
 			lastCompletedStepsMux.Unlock()
-			tags := convertSteadybitEventToDataDogEventTags(event)
-			if tags == nil {
+			executionAndStepTags := convertSteadybitEventToDataDogEventTags(event)
+			if executionAndStepTags == nil {
 				return
 			}
-			tags = append(tags, getStepTags(step)...)
+			executionAndStepTags = append(executionAndStepTags, getStepTags(step)...)
 			duration := step.EndedTime.Sub(*step.StartedTime)
 
 			for _, target := range *step.TargetExecutions {
-				tags = append(tags, getTargetTags(target)...)
+				targetTags := getTargetTags(target)
+				allTags := make([]string, 0, len(executionAndStepTags)+len(targetTags))
+				allTags = append(allTags, executionAndStepTags...)
+				allTags = append(allTags, targetTags...)
 				actionName := *step.ActionId
 				if step.ActionName != nil {
 					actionName = *step.ActionName
@@ -205,7 +209,7 @@ func onExperimentStepCompleted(w http.ResponseWriter, r *http.Request, body []by
 						duration.Seconds(),
 						getTargetName(target),
 					),
-					Tags:           tags,
+					Tags:           allTags,
 					SourceTypeName: extutil.Ptr("Steadybit"),
 					AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
 				}
