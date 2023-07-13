@@ -15,6 +15,7 @@ import (
 	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func RegisterMonitorDiscoveryHandlers() {
@@ -100,7 +101,9 @@ func GetAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []
 	parameters.PageSize = extutil.Ptr(int32(200))
 	parameters.Page = extutil.Ptr(int64(0))
 
+	start := time.Now()
 	for {
+		log.Debug().Int64("page", *parameters.Page).Msg("Fetch monitors from Datadog")
 		monitors, r, err := api.ListMonitors(ctx, *parameters)
 		if err != nil {
 			log.Err(err).Msgf("Failed to retrieve monitors from Datadog for page %d and page size %d. Full response: %v",
@@ -130,7 +133,7 @@ func GetAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []
 
 		parameters.Page = extutil.Ptr(*parameters.Page + 1)
 	}
-
+	log.Debug().Msgf("Discovery took %s, returning %d monitors.", time.Since(start), len(result))
 	return result
 }
 
