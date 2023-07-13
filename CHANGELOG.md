@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.2
+
+ - Added service tag to Datadog events
+
+## v1.7.1
+
+ - Added DEBUG logging for monitor discovery
+
 ## v1.7.0
 
  - Links to Datadogs monitors are now using the timeframe of the experiment execution.

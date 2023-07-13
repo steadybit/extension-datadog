@@ -327,15 +327,16 @@ func Test_getTargetTags(t *testing.T) {
 				target: event_kit_api.ExperimentStepExecutionTarget{
 					AgentHostname: "Agent-1",
 					TargetAttributes: map[string][]string{
-						"k8s.container.name": {"example-c1"},
-						"container.host":     {"host-123"},
-						"k8s.namespace":      {"namespace"},
-						"k8s.deployment":     {"example"},
-						"k8s.pod.name":       {"example-4711-123"},
-						"k8s.cluster-name":   {"dev-cluster"},
-						"aws.zone":           {"eu-central-1a"},
-						"aws.region":         {"eu-central-1"},
-						"aws.account":        {"123456789"},
+						"k8s.container.name":                       {"example-c1"},
+						"k8s.pod.label.tags.datadoghq.com/service": {"example-service"},
+						"container.host":                           {"host-123"},
+						"k8s.namespace":                            {"namespace"},
+						"k8s.deployment":                           {"example"},
+						"k8s.pod.name":                             {"example-4711-123"},
+						"k8s.cluster-name":                         {"dev-cluster"},
+						"aws.zone":                                 {"eu-central-1a"},
+						"aws.region":                               {"eu-central-1"},
+						"aws.account":                              {"123456789"},
 					},
 					TargetName: "Container",
 					TargetType: "container",
@@ -350,6 +351,7 @@ func Test_getTargetTags(t *testing.T) {
 				"deployment:example",
 				"container_name:example-c1",
 				"cluster_name:dev-cluster",
+				"service:example-service",
 				"host:host-123-dev-cluster",
 				"aws_region:eu-central-1",
 				"aws_zone:eu-central-1a",
@@ -357,20 +359,44 @@ func Test_getTargetTags(t *testing.T) {
 			},
 		},
 		{
-			name: "Successfully deduplicate tags",
+			name: "Successfully deduplicate service tags",
 			args: args{
 				target: event_kit_api.ExperimentStepExecutionTarget{
 					AgentHostname: "Agent-1",
 					TargetAttributes: map[string][]string{
-						"container.host": {"host-123"},
-						"k8s.node.name":  {"host-123"},
+						"k8s.cluster-name":                                {"dev-cluster"},
+						"k8s.pod.label.tags.datadoghq.com/service":        {"service-1"},
+						"k8s.deployment.label.tags.datadoghq.com/service": {"service-1"},
 					},
 					TargetName: "Container",
 					TargetType: "container",
 				},
 			},
 			want: []string{
-				"host:host-123",
+				"kube_cluster_name:dev-cluster",
+				"cluster_name:dev-cluster",
+				"service:service-1",
+			},
+		},
+		{
+			name: "Should add cluster name to hostname and deduplicate host names",
+			args: args{
+				target: event_kit_api.ExperimentStepExecutionTarget{
+					AgentHostname: "Agent-1",
+					TargetAttributes: map[string][]string{
+						"k8s.cluster-name":     {"dev-cluster"},
+						"container.host":       {"host-123"},
+						"host.hostname":        {"host-123"},
+						"application.hostname": {"host-123"},
+					},
+					TargetName: "Container",
+					TargetType: "container",
+				},
+			},
+			want: []string{
+				"kube_cluster_name:dev-cluster",
+				"cluster_name:dev-cluster",
+				"host:host-123-dev-cluster",
 			},
 		},
 		{

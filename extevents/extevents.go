@@ -314,6 +314,8 @@ func getTargetTags(target event_kit_api.ExperimentStepExecutionTarget) []string 
 		tags = append(tags, translateToDatadog(target, "k8s.deployment", "deployment")...)
 		tags = append(tags, translateToDatadog(target, "k8s.container.name", "container_name")...)
 		tags = append(tags, translateToDatadog(target, "k8s.cluster-name", "cluster_name")...)
+		tags = append(tags, translateToDatadog(target, "k8s.pod.label.tags.datadoghq.com/service", "service")...)
+		tags = append(tags, translateToDatadog(target, "k8s.deployment.label.tags.datadoghq.com/service", "service")...)
 	}
 
 	tags = append(tags, getHostnameTag(target)...)
@@ -324,7 +326,7 @@ func getTargetTags(target event_kit_api.ExperimentStepExecutionTarget) []string 
 	tags = append(tags, translateToDatadog(target, "aws.zone", "aws_zone")...)
 	tags = append(tags, translateToDatadog(target, "aws.account", "aws_account")...)
 
-	return tags
+	return removeDuplicates(tags)
 }
 
 func getHostnameTag(target event_kit_api.ExperimentStepExecutionTarget) []string {
