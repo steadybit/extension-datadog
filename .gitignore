@@ -4,3 +4,6 @@ extension-datadog.iml
 /extension-datadog.run.xml
 /e2e/e2e-coverage-docker.out
 /e2e/e2e-coverage-datadog.out
+/extension
+/gpg.key
+/dist
