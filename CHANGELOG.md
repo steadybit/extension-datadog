@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.3
+
+ - Add linux package build
+
 ## v1.7.2
 
  - Added service tag to Datadog events
