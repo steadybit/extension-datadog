@@ -90,12 +90,12 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 func (m *MonitorDowntimeAction) Prepare(_ context.Context, state *MonitorDowntimeState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
 	monitorId := request.Target.Attributes["datadog.monitor.id"]
 	if len(monitorId) == 0 {
-		return nil, extutil.Ptr(extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil))
+		return nil, extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil)
 	}
 
 	parsedMonitorId, err := strconv.ParseInt(monitorId[0], 10, 64)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to parse monitor ID '%s' as int64.", monitorId[0]), nil))
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to parse monitor ID '%s' as int64.", monitorId[0]), nil)
 	}
 
 	duration := request.Config["duration"].(float64)
@@ -147,7 +147,7 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 
 	downtime, resp, err := api.CreateDowntime(ctx, downtimeRequest)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to create Downtime for monitor %d. Full response: %v", state.MonitorId, resp), err))
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to create Downtime for monitor %d. Full response: %v", state.MonitorId, resp), err)
 	}
 
 	state.DowntimeId = extutil.Ptr(downtime.GetId())
@@ -166,7 +166,7 @@ func MonitorDowntimeStop(ctx context.Context, state *MonitorDowntimeState, api M
 
 	resp, err := api.CancelDowntime(ctx, *state.DowntimeId)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to cancel Downtime (monitor %d, downtime %d). Full response: %v", state.MonitorId, *state.DowntimeId, resp), err))
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to cancel Downtime (monitor %d, downtime %d). Full response: %v", state.MonitorId, *state.DowntimeId, resp), err)
 	}
 
 	return &action_kit_api.StopResult{

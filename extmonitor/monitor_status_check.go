@@ -167,7 +167,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStatusCheckState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
 	monitorId := request.Target.Attributes["datadog.monitor.id"]
 	if len(monitorId) == 0 {
-		return nil, extutil.Ptr(extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil))
+		return nil, extension_kit.ToError("Target is missing the 'datadog.monitor.id' tag.", nil)
 	}
 
 	duration := request.Config["duration"].(float64)
@@ -184,7 +184,7 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 
 	parsedMonitorId, err := strconv.ParseInt(monitorId[0], 10, 64)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to parse monitor ID '%s' as int64.", monitorId[0]), nil))
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to parse monitor ID '%s' as int64.", monitorId[0]), nil)
 	}
 
 	state.MonitorId = parsedMonitorId
@@ -212,7 +212,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	now := time.Now()
 	monitor, resp, err := api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters())
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog. Full response: %v", state.MonitorId, resp), err))
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog. Full response: %v", state.MonitorId, resp), err)
 	}
 
 	completed := now.After(state.End)
