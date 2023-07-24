@@ -6,7 +6,7 @@ module github.com/steadybit/extension-datadog
 go 1.20
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.14.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.15.0
 	github.com/google/uuid v1.3.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/rs/zerolog v1.29.1
@@ -28,6 +28,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
