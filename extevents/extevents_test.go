@@ -13,9 +13,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/steadybit/event-kit/go/event_kit_api"
 	"github.com/steadybit/extension-kit/extutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -29,7 +30,7 @@ func (m *datadogClientMock) SendEvent(ctx context.Context, datadogEventBody data
 	return args.Get(0).(datadogV1.EventCreateResponse), args.Get(1).(*http.Response), args.Error(2)
 }
 
-func TestSendDatadogEvent(t *testing.T) {
+func Test_sendDatadogEvent(t *testing.T) {
 	// Given
 	mockedApi := new(datadogClientMock)
 	okResponse := http.Response{
@@ -44,7 +45,7 @@ func TestSendDatadogEvent(t *testing.T) {
 		Tags:           []string{},
 		SourceTypeName: extutil.Ptr("Steadybit"),
 	}
-	SendDatadogEvent(context.Background(), mockedApi, datadogEventBody)
+	sendDatadogEvent(context.Background(), mockedApi, datadogEventBody)
 
 	// Then
 	mockedApi.AssertNumberOfCalls(t, "SendEvent", 1)
@@ -52,7 +53,6 @@ func TestSendDatadogEvent(t *testing.T) {
 
 func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 	type args struct {
-		w     http.ResponseWriter
 		event event_kit_api.EventRequestBody
 	}
 
@@ -110,14 +110,14 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"event_name:experiment.started",
 				"event_time:2021-01-01 00:00:00 +0000 UTC",
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"team_name:gateway",
-				"team_key:test",
 				"tenant_name:name",
 				"tenant_key:key",
 				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
+				"team_name:gateway",
+				"team_key:test",
 				"principal_type:user",
 				"principal_username:Pan",
 				"principal_name:Peter",
@@ -169,14 +169,14 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"event_name:experiment.started",
 				"event_time:2021-01-01 00:00:00 +0000 UTC",
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"team_name:gateway",
-				"team_key:test",
 				"tenant_name:name",
 				"tenant_key:key",
 				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
+				"team_name:gateway",
+				"team_key:test",
 				"principal_type:access_token",
 				"principal_name:MyFancyToken",
 				"experiment_hypothesis:Hypothesis",
@@ -224,14 +224,14 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"event_name:experiment.started",
 				"event_time:2021-01-01 00:00:00 +0000 UTC",
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"team_name:gateway",
-				"team_key:test",
 				"tenant_name:name",
 				"tenant_key:key",
 				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
+				"team_name:gateway",
+				"team_key:test",
 				"started_time:" + startedTime.Format(time.RFC3339),
 				"ended_time:" + endedTime.Format(time.RFC3339)},
 		},
@@ -239,9 +239,8 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := convertSteadybitEventToDataDogEventTags(tt.args.event); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("convertSteadybitEventToDataDogEventTags() = %v, want %v", got, tt.want)
-			}
+			got := convertSteadybitEventToDataDogEventTags(tt.args.event)
+			assert.Equalf(t, tt.want, got, "convertSteadybitEventToDataDogEventTags(%v)", tt.args.event)
 		})
 	}
 }
@@ -303,9 +302,8 @@ func Test_getStepTags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getStepTags(tt.args.stepExecution); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getStepTags() = %v, want %v", got, tt.want)
-			}
+			got := getStepTags(tt.args.stepExecution)
+			assert.Equalf(t, tt.want, got, "getStepTags(%v)", tt.args.stepExecution)
 		})
 	}
 }
@@ -420,9 +418,99 @@ func Test_getTargetTags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getTargetTags(tt.args.target); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getTargetTags() = %v, want %v", got, tt.want)
-			}
+			got := getTargetTags(tt.args.target)
+			assert.Equalf(t, tt.want, got, "getTargetTags(%v)", tt.args.target)
+		})
+	}
+}
+
+func Test_onExperimentStepStarted(t *testing.T) {
+	eventTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	startedTime := time.Date(2021, 1, 1, 0, 1, 0, 0, time.UTC)
+
+	type args struct {
+		event event_kit_api.EventRequestBody
+	}
+	tests := []struct {
+		name string
+		args args
+		want []datadogV1.EventCreateRequest
+	}{
+		{
+			name: "should emit event for experiment step started",
+			args: args{
+				event: event_kit_api.EventRequestBody{
+					Environment: extutil.Ptr(event_kit_api.Environment{
+						Id:   "test",
+						Name: "gateway",
+					}),
+					EventName: "experiment.step.started",
+					EventTime: eventTime,
+					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
+						ExecutionId:   42,
+						ExperimentKey: "ExperimentKey",
+						Name:          "Name",
+						State:         event_kit_api.ExperimentExecutionStateRunning,
+						StartedTime:   startedTime,
+						Steps: []event_kit_api.ExperimentStepExecution{
+							{
+								Id:         uuid.UUID{},
+								ActionId:   extutil.Ptr("some_action_id"),
+								ActionName: extutil.Ptr("other step"),
+								ActionKind: extutil.Ptr(event_kit_api.Attack),
+								TargetExecutions: &[]event_kit_api.ExperimentStepExecutionTarget{
+									{TargetType: "type", TargetName: "test"},
+								},
+							},
+							{
+								Id:         uuid.MustParse("e2cbfb31-1645-499c-86a2-54097473b877"),
+								ActionId:   extutil.Ptr("some_action_id"),
+								ActionName: extutil.Ptr("started step"),
+								ActionKind: extutil.Ptr(event_kit_api.Attack),
+								TargetExecutions: &[]event_kit_api.ExperimentStepExecutionTarget{
+									{TargetType: "type", TargetName: "test"},
+								},
+							},
+						},
+					}),
+					Id:              uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
+					StepExecutionId: extutil.Ptr(uuid.MustParse("e2cbfb31-1645-499c-86a2-54097473b877")),
+					Tenant: event_kit_api.Tenant{
+						Key:  "key",
+						Name: "name",
+					},
+				},
+			},
+			want: []datadogV1.EventCreateRequest{{
+				AggregationKey: extutil.Ptr("steadybit-execution-42"),
+				SourceTypeName: extutil.Ptr("Steadybit"),
+				Tags: []string{
+					"source:Steadybit",
+					"environment_name:gateway",
+					"event_name:experiment.step.started",
+					"event_time:2021-01-01 00:00:00 +0000 UTC",
+					"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
+					"tenant_name:name",
+					"tenant_key:key",
+					"execution_id:42",
+					"experiment_key:ExperimentKey",
+					"experiment_name:Name",
+					"execution_state:running",
+					"started_time:" + startedTime.Format(time.RFC3339),
+					"step_state:",
+					"step_action_name:started step",
+				},
+				Title: "Experiment 'ExperimentKey' - Attack started",
+				Text:  "%%% \nExperiment `ExperimentKey` - `Name` (execution `42`) - Attack `started step` started.\n\nTarget:test\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%",
+			}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := onExperimentStepStarted(tt.args.event)
+			require.NoError(t, err)
+			assert.Equalf(t, tt.want, got, "onExperimentStepStarted(%v)", tt.args.event)
 		})
 	}
 }
