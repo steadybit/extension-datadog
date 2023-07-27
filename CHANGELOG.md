@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.7.4 (next)
+## v1.7.4
 
  - Add DateHappened to submitted DataDog events
  - Correctly select StepExecution for event creation
