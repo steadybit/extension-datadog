@@ -64,6 +64,7 @@ func onExperimentStarted(event event_kit_api.EventRequestBody) ([]datadogV1.Even
 		Tags:           convertSteadybitEventToDataDogEventTags(event),
 		SourceTypeName: extutil.Ptr("Steadybit"),
 		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+		DateHappened:   extutil.Ptr(event.EventTime.Unix()),
 	}}, nil
 }
 
@@ -80,6 +81,7 @@ func onExperimentCompleted(event event_kit_api.EventRequestBody) ([]datadogV1.Ev
 		Tags:           convertSteadybitEventToDataDogEventTags(event),
 		SourceTypeName: extutil.Ptr("Steadybit"),
 		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+		DateHappened:   extutil.Ptr(event.EventTime.Unix()),
 	}}, nil
 }
 
@@ -114,6 +116,7 @@ func onExperimentStepStarted(event event_kit_api.EventRequestBody) ([]datadogV1.
 				Tags:           append(stepTags, getTargetTags(target)...),
 				SourceTypeName: extutil.Ptr("Steadybit"),
 				AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+				DateHappened:   extutil.Ptr(event.EventTime.Unix()),
 			})
 		}
 	}
@@ -155,6 +158,7 @@ func onExperimentStepCompleted(event event_kit_api.EventRequestBody) ([]datadogV
 				Tags:           append(stepTags, getTargetTags(target)...),
 				SourceTypeName: extutil.Ptr("Steadybit"),
 				AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+				DateHappened:   extutil.Ptr(event.EventTime.Unix()),
 			})
 		}
 	}

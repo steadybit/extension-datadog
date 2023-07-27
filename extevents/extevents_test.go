@@ -500,8 +500,9 @@ func Test_onExperimentStepStarted(t *testing.T) {
 					"step_state:",
 					"step_action_name:started step",
 				},
-				Title: "Experiment 'ExperimentKey' - Attack started",
-				Text:  "%%% \nExperiment `ExperimentKey` - `Name` (execution `42`) - Attack `started step` started.\n\nTarget:test\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%",
+				Title:        "Experiment 'ExperimentKey' - Attack started",
+				Text:         "%%% \nExperiment `ExperimentKey` - `Name` (execution `42`) - Attack `started step` started.\n\nTarget:test\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%",
+				DateHappened: extutil.Ptr(eventTime.Unix()),
 			}},
 		},
 	}

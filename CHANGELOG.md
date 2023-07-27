@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.7.4 (next)
+
+ - Add DateHappened to submitted DataDog events
+ - Correctly select StepExecution for event creation
+
 ## v1.7.3
 
  - Add linux package build
