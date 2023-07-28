@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.5
+
+- update dependencies
+
 ## v1.7.4
 
  - Add DateHappened to submitted DataDog events
