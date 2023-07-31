@@ -31,22 +31,22 @@ our [official Helm chart](https://github.com/steadybit/extension-datadog/tree/ma
 ### Helm
 
 ```bash
-helm repo add steadybit https://steadybit.github.io/extension-datadog
+helm repo add steadybit-extension-datadog https://steadybit.github.io/extension-datadog
 helm repo update
 ```
 
 ```bash
-helm upgrade steadybit-extension-datadog \\
-  --install \\
-  --wait \\
-  --timeout 5m0s \\
-  --create-namespace \\
-  --namespace steadybit-extension \\
-  --set datadog.apiKey="{{API_KEY}}" \\
-  --set datadog.applicationKey="{{APPLICATION_KEY}}" \\
-  --set datadog.siteParameter="{{SITE_PARAMETER}}" \\
-  --set datadog.siteUrl="{{SITE_URL}}" \\
-  steadybit/steadybit-extension-datadog`
+helm upgrade steadybit-extension-datadog \
+  --install \
+  --wait \
+  --timeout 5m0s \
+  --create-namespace \
+  --namespace steadybit-extension \
+  --set datadog.apiKey="{{API_KEY}}" \
+  --set datadog.applicationKey="{{APPLICATION_KEY}}" \
+  --set datadog.siteParameter="{{SITE_PARAMETER}}" \
+  --set datadog.siteUrl="{{SITE_URL}}" \
+  steadybit-extension-datadog/steadybit-extension-datadog`
 ```
 
 ### Docker
@@ -54,13 +54,13 @@ helm upgrade steadybit-extension-datadog \\
 You may alternatively start the Docker container manually.
 
 ```bash
-docker run \\
-  --env STEADYBIT_LOG_LEVEL=info \\
-  --env STEADYBIT_EXTENSION_API_KEY="{{API_KEY}}" \\
-  --env STEADYBIT_EXTENSION_APPLICATION_KEY="{{APPLICATION_KEY}}" \\
-  --env STEADYBIT_EXTENSION_SITE_PARAMETER="{{SITE_PARAMETER}}" \\
-  --env STEADYBIT_EXTENSION_SITE_URL="{{SITE_URL}}" \\
-  --expose 8090 \\
+docker run \
+  --env STEADYBIT_LOG_LEVEL=info \
+  --env STEADYBIT_EXTENSION_API_KEY="{{API_KEY}}" \
+  --env STEADYBIT_EXTENSION_APPLICATION_KEY="{{APPLICATION_KEY}}" \
+  --env STEADYBIT_EXTENSION_SITE_PARAMETER="{{SITE_PARAMETER}}" \
+  --env STEADYBIT_EXTENSION_SITE_URL="{{SITE_URL}}" \
+  --expose 8090 \
   ghcr.io/steadybit/extension-datadog:latest
 ```
 
