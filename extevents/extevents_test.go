@@ -264,7 +264,7 @@ func Test_getStepTags(t *testing.T) {
 				stepExecution: event_kit_api.ExperimentStepExecution{
 					Id:          uuid.UUID{},
 					Type:        event_kit_api.Action,
-					ActionId:    extutil.Ptr("com.github.steadybit.action.example"),
+					ActionId:    extutil.Ptr("com.steadybit.action.example"),
 					ActionName:  extutil.Ptr("example-action"),
 					ActionKind:  extutil.Ptr(event_kit_api.Attack),
 					CustomLabel: extutil.Ptr("My very own label"),
@@ -277,7 +277,7 @@ func Test_getStepTags(t *testing.T) {
 				"step_state:failed",
 				"step_started_time:2021-01-01T00:01:00Z",
 				"step_ended_time:2021-01-01T00:02:00Z",
-				"step_action_id:com.github.steadybit.action.example",
+				"step_action_id:com.steadybit.action.example",
 				"step_action_name:example-action",
 				"step_custom_label:My very own label",
 			},
@@ -288,14 +288,14 @@ func Test_getStepTags(t *testing.T) {
 				stepExecution: event_kit_api.ExperimentStepExecution{
 					Id:         uuid.UUID{},
 					Type:       event_kit_api.Action,
-					ActionId:   extutil.Ptr("com.github.steadybit.action.example"),
+					ActionId:   extutil.Ptr("com.steadybit.action.example"),
 					ActionKind: extutil.Ptr(event_kit_api.Attack),
 					State:      event_kit_api.ExperimentStepExecutionStateCompleted,
 				},
 			},
 			want: []string{
 				"step_state:completed",
-				"step_action_id:com.github.steadybit.action.example",
+				"step_action_id:com.steadybit.action.example",
 			},
 		},
 	}
