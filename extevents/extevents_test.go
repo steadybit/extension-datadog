@@ -337,7 +337,7 @@ func Test_getTargetTags(t *testing.T) {
 						"aws.account":                              {"123456789"},
 					},
 					TargetName: "Container",
-					TargetType: "container",
+					TargetType: "com.steadybit.extension_container.container",
 				},
 			},
 			want: []string{
@@ -367,7 +367,7 @@ func Test_getTargetTags(t *testing.T) {
 						"k8s.deployment.label.tags.datadoghq.com/service": {"service-1"},
 					},
 					TargetName: "Container",
-					TargetType: "container",
+					TargetType: "com.steadybit.extension_container.container",
 				},
 			},
 			want: []string{
@@ -388,7 +388,7 @@ func Test_getTargetTags(t *testing.T) {
 						"application.hostname": {"host-123"},
 					},
 					TargetName: "Container",
-					TargetType: "container",
+					TargetType: "com.steadybit.extension_container.container",
 				},
 			},
 			want: []string{
@@ -407,7 +407,7 @@ func Test_getTargetTags(t *testing.T) {
 						"k8s.namespace": {"namespace-1", "namespace-2", "namespace-3"},
 					},
 					TargetName: "Host",
-					TargetType: "host",
+					TargetType: "com.steadybit.extension_host.host",
 				},
 			},
 			want: []string{
