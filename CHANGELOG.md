@@ -1,9 +1,12 @@
 # Changelog
 
+## v1.7.6
+
+- migration to new unified steadybit actionIds and targetTypes
+
 ## v1.7.5
 
 - update dependencies
-- migration to new unified steadybit actionIds and targetTypes
 
 ## v1.7.4
 
