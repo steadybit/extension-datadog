@@ -240,6 +240,81 @@ manifest should match snapshot with extra env vars:
                 runAsUser: 10000
               volumeMounts: null
           volumes: null
+manifest should match snapshot with extra labels:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        steadybit.com/discovery-disabled: "true"
+        tags.datadoghq.com/service: steadybit-extension
+      name: RELEASE-NAME-steadybit-extension-datadog
+      namespace: NAMESPACE
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: steadybit-extension-datadog
+      template:
+        metadata:
+          annotations: null
+          labels:
+            app.kubernetes.io/name: steadybit-extension-datadog
+            steadybit.com/discovery-disabled: "true"
+        spec:
+          containers:
+            - env:
+                - name: STEADYBIT_LOG_LEVEL
+                  value: INFO
+                - name: STEADYBIT_LOG_FORMAT
+                  value: text
+                - name: STEADYBIT_EXTENSION_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: api-key
+                      name: steadybit-extension-datadog
+                - name: STEADYBIT_EXTENSION_APPLICATION_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: application-key
+                      name: steadybit-extension-datadog
+                - name: STEADYBIT_EXTENSION_SITE_PARAMETER
+                  valueFrom:
+                    secretKeyRef:
+                      key: site-parameter
+                      name: steadybit-extension-datadog
+                - name: STEADYBIT_EXTENSION_SITE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: site-url
+                      name: steadybit-extension-datadog
+              image: ghcr.io/steadybit/extension-datadog:latest
+              imagePullPolicy: Always
+              livenessProbe:
+                httpGet:
+                  path: /health/liveness
+                  port: 8091
+              name: extension
+              ports:
+                - containerPort: 8090
+              readinessProbe:
+                httpGet:
+                  path: /health/readiness
+                  port: 8091
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsGroup: 10000
+                runAsNonRoot: true
+                runAsUser: 10000
+              volumeMounts: null
+          volumes: null
 manifest should match snapshot with mock server:
   1: |
     apiVersion: apps/v1
