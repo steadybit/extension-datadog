@@ -14,6 +14,7 @@ Learn about the capabilities of this extension in our [Reliability Hub](https://
 | `STEADYBIT_EXTENSION_APPLICATION_KEY` | `datadog.applicationKey` | [Datadog Application Key](https://docs.datadoghq.com/account_management/api-app-keys/)             | yes      |         |
 | `STEADYBIT_EXTENSION_SITE_PARAMETER`  | `datadog.siteParameter`  | [Datadog Site Parameter](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site) | yes      |         |
 | `STEADYBIT_EXTENSION_SITE_URL`        | `datadog.siteUrl`        | [Datadog Site Url](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)       | yes      |         |
+| `HTTPS_PROXY`                         | via extraEnv variables   | Configure the proxy to be used for Datadog communication.                                          | no       |         |
 
 The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 
@@ -75,3 +76,13 @@ Please use our [outpost-linux.sh script](https://docs.steadybit.com/install-and-
 The script will download the latest version of the extension and install it using the package manager.
 
 After installing configure the extension by editing `/etc/steadybit/extension-datadog` and then restart the service.
+
+
+## Proxy
+To communicate to Datadog via a proxy, we need the environment variable `https_proxy` to be set.
+This can be set via helm using the extraEnv variable
+    
+```bash
+--set "extraEnv[0].name=HTTPS_PROXY" \
+--set "extraEnv[0].value=https:\\user:pwd@CompanyProxy.com:8888" 
+```
