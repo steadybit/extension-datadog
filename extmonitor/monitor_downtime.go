@@ -62,7 +62,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 		}),
 		Category:    extutil.Ptr("monitoring"),
 		Kind:        action_kit_api.Other,
-		TimeControl: action_kit_api.External,
+		TimeControl: action_kit_api.TimeControlExternal,
 		Parameters: []action_kit_api.ActionParameter{
 			{
 				Name:         "duration",
