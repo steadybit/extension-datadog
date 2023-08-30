@@ -38,10 +38,7 @@ func TestWithMinikube(t *testing.T) {
 		},
 	}
 
-	mOpts := e2e.DefaultMiniKubeOpts
-	mOpts.Runtimes = []e2e.Runtime{e2e.RuntimeDocker}
-
-	e2e.WithMinikube(t, mOpts, &extFactory, []e2e.WithMinikubeTestCase{
+	e2e.WithDefaultMinikube(t, &extFactory, []e2e.WithMinikubeTestCase{
 		{
 			Name: "target discovery",
 			Test: testDiscovery,
