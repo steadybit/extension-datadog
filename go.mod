@@ -15,7 +15,7 @@ require (
 	github.com/steadybit/action-kit/go/action_kit_test v1.0.9
 	github.com/steadybit/discovery-kit/go/discovery_kit_api v1.3.0
 	github.com/steadybit/event-kit/go/event_kit_api v1.2.3
-	github.com/steadybit/extension-kit v1.8.7
+	github.com/steadybit/extension-kit v1.8.8
 	github.com/stretchr/testify v1.8.4
 )
 
@@ -61,6 +61,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/xid v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
