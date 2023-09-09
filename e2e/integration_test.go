@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/steadybit/action-kit/go/action_kit_test/e2e"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
+	"github.com/steadybit/discovery-kit/go/discovery_kit_test/validate"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,15 @@ func TestWithMinikube(t *testing.T) {
 			Name: "target discovery",
 			Test: testDiscovery,
 		},
+		{
+			Name: "validate discovery",
+			Test: validateDiscovery,
+		},
 	})
+}
+
+func validateDiscovery(t *testing.T, _ *e2e.Minikube, e *e2e.Extension) {
+	assert.NoError(t, validate.ValidateEndpointReferences("/", e.Client))
 }
 
 func testDiscovery(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {

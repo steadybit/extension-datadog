@@ -75,6 +75,7 @@ func getExtensionList() ExtensionListResponse {
 					Path:   "/monitor/discovery/attribute-descriptions",
 				},
 			},
+			TargetEnrichmentRules: []discovery_kit_api.DescribingEndpointReference{},
 		},
 		EventListenerList: event_kit_api.EventListenerList{
 			EventListeners: []event_kit_api.EventListener{
