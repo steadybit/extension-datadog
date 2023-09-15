@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.9
+
+- expected status can be a list of status
+
 ## v1.7.8
 
 - update dependencies

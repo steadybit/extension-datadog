@@ -13,6 +13,7 @@ import (
 	extension_kit "github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
+	"golang.org/x/exp/slices"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,7 +32,7 @@ type MonitorStatusCheckState struct {
 	MonitorId          int64
 	Start              time.Time
 	End                time.Time
-	ExpectedStatus     string
+	ExpectedStatus     []string
 	StatusCheckMode    string
 	StatusCheckSuccess bool
 }
@@ -109,8 +110,48 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 						Value: string(datadogV1.MONITOROVERALLSTATES_IGNORED),
 					},
 				}),
+				Deprecated:         extutil.Ptr(true),
+				DeprecationMessage: extutil.Ptr("Use 'Expected Status List' instead."),
+				Required:           extutil.Ptr(false),
+				Order:              extutil.Ptr(2),
+			},
+			{
+				Name:        "expectedStatusList",
+				Label:       "Expected Status List",
+				Description: extutil.Ptr(""),
+				Type:        action_kit_api.StringArray,
+				Options: extutil.Ptr([]action_kit_api.ParameterOption{
+					action_kit_api.ExplicitParameterOption{
+						Label: "Ok",
+						Value: string(datadogV1.MONITOROVERALLSTATES_OK),
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "Alert",
+						Value: string(datadogV1.MONITOROVERALLSTATES_ALERT),
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "Warn",
+						Value: string(datadogV1.MONITOROVERALLSTATES_WARN),
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "No Data",
+						Value: string(datadogV1.MONITOROVERALLSTATES_NO_DATA),
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "Unknown",
+						Value: string(datadogV1.MONITOROVERALLSTATES_UNKNOWN),
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "Skipped",
+						Value: string(datadogV1.MONITOROVERALLSTATES_SKIPPED),
+					},
+					action_kit_api.ExplicitParameterOption{
+						Label: "Ignored",
+						Value: string(datadogV1.MONITOROVERALLSTATES_IGNORED),
+					},
+				}),
 				Required: extutil.Ptr(false),
-				Order:    extutil.Ptr(2),
+				Order:    extutil.Ptr(3),
 			},
 			{
 				Name:         "statusCheckMode",
@@ -129,7 +170,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 					},
 				}),
 				Required: extutil.Ptr(true),
-				Order:    extutil.Ptr(3),
+				Order:    extutil.Ptr(4),
 			},
 		},
 		Widgets: extutil.Ptr([]action_kit_api.Widget{
@@ -173,9 +214,12 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	duration := request.Config["duration"].(float64)
 	end := time.Now().Add(time.Millisecond * time.Duration(duration))
 
-	var expectedStatus string
-	if request.Config["expectedStatus"] != nil {
-		expectedStatus = fmt.Sprintf("%v", request.Config["expectedStatus"])
+	expectedStatus := extutil.ToStringArray(request.Config["expectedStatusList"])
+	if len(expectedStatus) == 0 {
+		expectedStatus = make([]string, 0)
+		if request.Config["expectedStatus"] != nil {
+			expectedStatus = append(expectedStatus, fmt.Sprintf("%v", request.Config["expectedStatus"]))
+		}
 	}
 	var statusCheckMode string
 	if request.Config["statusCheckMode"] != nil {
@@ -219,7 +263,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	var checkError *action_kit_api.ActionKitError
 	if len(state.ExpectedStatus) > 0 && monitor.OverallState != nil {
 		if state.StatusCheckMode == statusCheckModeAllTheTime {
-			if string(*monitor.OverallState) != state.ExpectedStatus {
+			if !slices.Contains(state.ExpectedStatus, string(*monitor.OverallState)) {
 				tags := strings.Join(monitor.Tags, ", ")
 				if len(tags) == 0 {
 					tags = "<none>"
@@ -235,7 +279,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 				})
 			}
 		} else if state.StatusCheckMode == statusCheckModeAtLeastOnce {
-			if string(*monitor.OverallState) == state.ExpectedStatus {
+			if slices.Contains(state.ExpectedStatus, string(*monitor.OverallState)) {
 				state.StatusCheckSuccess = true
 			}
 			if completed && !state.StatusCheckSuccess {

@@ -29,6 +29,65 @@ func TestPrepareExtractsState(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
+			"duration":           1000 * 60,
+			"expectedStatus":     datadogV1.MONITOROVERALLSTATES_OK,
+			"expectedStatusList": []string{string(datadogV1.MONITOROVERALLSTATES_OK), string(datadogV1.MONITOROVERALLSTATES_NO_DATA)},
+			"statusCheckMode":    statusCheckModeAtLeastOnce,
+		},
+		Target: extutil.Ptr(action_kit_api.Target{
+			Attributes: map[string][]string{
+				"datadog.monitor.id": {"12349876"},
+			},
+		}),
+	})
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
+
+	// When
+	result, err := attack.Prepare(context.TODO(), &state, request)
+
+	// Then
+	require.Nil(t, result)
+	require.Nil(t, err)
+	require.Equal(t, int64(12349876), state.MonitorId)
+	require.NotNil(t, state.Start)
+	require.True(t, state.End.After(time.Now()))
+	require.Equal(t, []string{"OK", "No Data"}, state.ExpectedStatus)
+	require.Equal(t, statusCheckModeAtLeastOnce, state.StatusCheckMode)
+}
+
+func TestPrepareExtractsStateWithoutStatusCheck(t *testing.T) {
+	// Given
+	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
+		Config: map[string]interface{}{
+			"duration": 1000 * 60,
+		},
+		Target: extutil.Ptr(action_kit_api.Target{
+			Attributes: map[string][]string{
+				"datadog.monitor.id": {"12349876"},
+			},
+		}),
+	})
+	attack := MonitorStatusCheckAction{}
+	state := attack.NewEmptyState()
+
+	// When
+	result, err := attack.Prepare(context.TODO(), &state, request)
+
+	// Then
+	require.Nil(t, result)
+	require.Nil(t, err)
+	require.Equal(t, int64(12349876), state.MonitorId)
+	require.NotNil(t, state.Start)
+	require.True(t, state.End.After(time.Now()))
+	require.Equal(t, []string{}, state.ExpectedStatus)
+	require.Equal(t, state.StatusCheckMode, "")
+}
+
+func TestPrepareExtractsStateDeprecatedExpextedStatus(t *testing.T) {
+	// Given
+	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
+		Config: map[string]interface{}{
 			"duration":        1000 * 60,
 			"expectedStatus":  datadogV1.MONITOROVERALLSTATES_OK,
 			"statusCheckMode": statusCheckModeAtLeastOnce,
@@ -51,7 +110,7 @@ func TestPrepareExtractsState(t *testing.T) {
 	require.Equal(t, int64(12349876), state.MonitorId)
 	require.NotNil(t, state.Start)
 	require.True(t, state.End.After(time.Now()))
-	require.Equal(t, "OK", state.ExpectedStatus)
+	require.Equal(t, []string{"OK"}, state.ExpectedStatus)
 	require.Equal(t, statusCheckModeAtLeastOnce, state.StatusCheckMode)
 }
 
@@ -115,7 +174,7 @@ func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute)
-	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 
 	// When
 	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
@@ -140,7 +199,7 @@ func TestAllTheTimeSuccess(t *testing.T) {
 	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * -1)
-	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_WARN)
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_WARN)}
 	state.StatusCheckMode = statusCheckModeAllTheTime
 
 	// When
@@ -169,7 +228,7 @@ func TestAllTheTimeExpectationMismatch(t *testing.T) {
 	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * 1) // time not yet up - early exit
-	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 	state.StatusCheckMode = statusCheckModeAllTheTime
 
 	// When
@@ -179,7 +238,7 @@ func TestAllTheTimeExpectationMismatch(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, result.State)
 	require.False(t, result.Completed)
-	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) has status 'Warn' whereas 'OK' is expected.", result.Error.Title)
+	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) has status 'Warn' whereas '[OK]' is expected.", result.Error.Title)
 	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
 	metric := (*result.Metrics)[0]
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
@@ -207,7 +266,7 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * 1) //time not yet up - no early exit if status is ok at least once
-	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 	state.StatusCheckMode = statusCheckModeAtLeastOnce
 
 	// When
@@ -288,7 +347,7 @@ func TestAtLeastOnceExpectationMismatch(t *testing.T) {
 	state := action.NewEmptyState()
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute * -1) //Simulate that the time has passed
-	state.ExpectedStatus = string(datadogV1.MONITOROVERALLSTATES_OK)
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 	state.StatusCheckMode = statusCheckModeAtLeastOnce
 
 	// When
@@ -298,7 +357,7 @@ func TestAtLeastOnceExpectationMismatch(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, result.State)
 	require.True(t, result.Completed)
-	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) didn't have status 'OK' at least once.", result.Error.Title)
+	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) didn't have status '[OK]' at least once.", result.Error.Title)
 	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
 	metric := (*result.Metrics)[0]
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
