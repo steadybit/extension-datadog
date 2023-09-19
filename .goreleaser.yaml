@@ -2,6 +2,8 @@ project_name: steadybit-extension-datadog
 before:
   hooks:
     - go mod download
+    - make licenses-report
+
 release:
   prerelease: "false"
 builds:
@@ -58,6 +60,8 @@ nfpms:
       - src: ./linuxpkg/config
         dst: /etc
         type: config
+      - src: ./licenses
+        dst: /opt/steadybit/extension-datadog/licenses
 
     scripts:
       preinstall: ./linuxpkg/scripts/preinstall.sh
