@@ -79,6 +79,10 @@ spec:
             {{- with .Values.extraEnv }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
+            {{- if .Values.discovery.attributes.excludes.monitor }}
+            - name: STEADYBIT_EXTENSION_DISCOVERY_ATTRIBUTES_EXCLUDES_MONITOR
+              value: {{ join "," .Values.discovery.attributes.excludes.monitor | quote }}
+            {{- end }}
           {{- with .Values.extraEnvFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}

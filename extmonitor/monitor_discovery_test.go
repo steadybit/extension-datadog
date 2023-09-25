@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -91,5 +92,35 @@ func TestErrorResponseReturnsIntermediateResult(t *testing.T) {
 	// Then
 	require.Len(t, monitors, 1)
 	require.Equal(t, "42", monitors[0].Id)
+	require.Equal(t, []string{"tagA", "tagB"}, monitors[0].Attributes["datadog.monitor.tags"])
+	mockedApi.AssertNumberOfCalls(t, "ListMonitors", 2)
+}
+
+
+func TestExlcudeAttributes(t *testing.T) {
+	// Given
+	config.Config.DiscoveryAttributesExcludesMonitor = []string{"datadog.monitor.tags"}
+	mockedApi := new(datadogClientMock)
+	page1 := []datadogV1.Monitor{
+		{
+			Id:   extutil.Ptr(int64(42)),
+			Name: extutil.Ptr("Test-42"),
+			Tags: []string{"tagA", "tagB"},
+		},
+	}
+	page2 := []datadogV1.Monitor{}
+	okResponse := http.Response{
+		StatusCode: 200,
+	}
+	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(0)).Return(page1, &okResponse, nil)
+	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(1)).Return(page2, &okResponse, nil)
+
+	// When
+	monitors := GetAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
+
+	// Then
+	require.Len(t, monitors, 1)
+	require.Equal(t, "42", monitors[0].Id)
+	require.NotContains(t, monitors[0].Attributes, "datadog.monitor.tags")
 	mockedApi.AssertNumberOfCalls(t, "ListMonitors", 2)
 }

@@ -8,13 +8,14 @@ Learn about the capabilities of this extension in our [Reliability Hub](https://
 
 ## Configuration
 
-| Environment Variable                  | Helm value               | Meaning                                                                                            | Required | Default |
-|---------------------------------------|--------------------------|----------------------------------------------------------------------------------------------------|----------|---------|
-| `STEADYBIT_EXTENSION_API_KEY`         | `datadog.apiKey`         | [Datadog API Key](https://docs.datadoghq.com/account_management/api-app-keys/)                     | yes      |         |
-| `STEADYBIT_EXTENSION_APPLICATION_KEY` | `datadog.applicationKey` | [Datadog Application Key](https://docs.datadoghq.com/account_management/api-app-keys/)             | yes      |         |
-| `STEADYBIT_EXTENSION_SITE_PARAMETER`  | `datadog.siteParameter`  | [Datadog Site Parameter](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site) | yes      |         |
-| `STEADYBIT_EXTENSION_SITE_URL`        | `datadog.siteUrl`        | [Datadog Site Url](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)       | yes      |         |
-| `HTTPS_PROXY`                         | via extraEnv variables   | Configure the proxy to be used for Datadog communication.                                          | no       |         |
+| Environment Variable                                        | Helm value                              | Meaning                                                                                                                | Required | Default |
+|-------------------------------------------------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------|----------|---------|
+| `STEADYBIT_EXTENSION_API_KEY`                               | `datadog.apiKey`                        | [Datadog API Key](https://docs.datadoghq.com/account_management/api-app-keys/)                                         | yes      |         |
+| `STEADYBIT_EXTENSION_APPLICATION_KEY`                       | `datadog.applicationKey`                | [Datadog Application Key](https://docs.datadoghq.com/account_management/api-app-keys/)                                 | yes      |         |
+| `STEADYBIT_EXTENSION_SITE_PARAMETER`                        | `datadog.siteParameter`                 | [Datadog Site Parameter](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)                     | yes      |         |
+| `STEADYBIT_EXTENSION_SITE_URL`                              | `datadog.siteUrl`                       | [Datadog Site Url](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)                           | yes      |         |
+| `HTTPS_PROXY`                                               | via extraEnv variables                  | Configure the proxy to be used for Datadog communication.                                                              | no       |         |
+| `STEADYBIT_EXTENSION_DISCOVERY_ATTRIBUTES_EXCLUDES_MONITOR` | `discovery.attributes.excludes.monitor` | List of Target Attributes which will be excluded during discovery. Checked by key equality and supporting trailing "*" | false    |         |
 
 The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 

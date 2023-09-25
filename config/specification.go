@@ -17,8 +17,9 @@ type Specification struct {
 	ApiKey         string `json:"apiKey" split_words:"true" required:"true"`
 	ApplicationKey string `json:"applicationKey" split_words:"true" required:"true"`
 	// Only used for testing:
-	TestingScheme *string `json:"testingScheme" split_words:"true" required:"false"`
-	TestingHost   *string `json:"testingHost" split_words:"true" required:"false"`
+	TestingScheme                     *string `json:"testingScheme" split_words:"true" required:"false"`
+	TestingHost                       *string `json:"testingHost" split_words:"true" required:"false"`
+	DiscoveryAttributesExcludesMonitor []string `json:"discoveryAttributesExcludesMonitor" split_words:"true" required:"false"`
 }
 
 func (s *Specification) WrapContextWithDatadogContextValues(ctx context.Context) context.Context {

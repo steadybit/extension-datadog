@@ -35,6 +35,7 @@ func TestWithMinikube(t *testing.T) {
 				"--set", "datadog.siteUrl=https://app.datadoghq.eu",
 				"--set", "testing.scheme=http",
 				"--set", "testing.host=host.minikube.internal:" + port,
+				"--set", "discovery.attributes.excludes.monitor={datadog.monitor.tags}",
 			}
 		},
 	}
@@ -66,4 +67,5 @@ func testDiscovery(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	require.NoError(t, err)
 	assert.Equal(t, target.TargetType, "com.steadybit.extension_datadog.monitor")
 	assert.True(t, e2e.HasAttribute(target, "datadog.monitor.name", "[DEV] Monitor Kubernetes Deployments Replica Pods"))
+	assert.NotContains(t, target.Attributes,"datadog.monitor.tags")
 }

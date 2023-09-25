@@ -134,7 +134,7 @@ func GetAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []
 		parameters.Page = extutil.Ptr(*parameters.Page + 1)
 	}
 	log.Debug().Msgf("Discovery took %s, returning %d monitors.", time.Since(start), len(result))
-	return result
+	return discovery_kit_api.ApplyAttributeExcludes(result, config.Config.DiscoveryAttributesExcludesMonitor)
 }
 
 func toTarget(monitor datadogV1.Monitor, siteUrl string) discovery_kit_api.Target {

@@ -114,3 +114,9 @@ extraEnv: []
 #  - secretRef:
 #    name: env-secrets
 extraEnvFrom: []
+
+discovery:
+  attributes:
+    excludes:
+      # discovery.attributes.excludes.monitor -- List of attributes to exclude from VM discovery.
+      monitor: []
