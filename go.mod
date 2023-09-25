@@ -9,7 +9,7 @@ require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.17.0
 	github.com/google/uuid v1.3.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.31.0
 	github.com/steadybit/action-kit/go/action_kit_api/v2 v2.7.3
 	github.com/steadybit/action-kit/go/action_kit_sdk v1.1.7
 	github.com/steadybit/action-kit/go/action_kit_test v1.2.0
