@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.10
+
+- Possibility to exclude attributes from discovery
+
 ## v1.7.9
 
 - expected status can be a list of status
