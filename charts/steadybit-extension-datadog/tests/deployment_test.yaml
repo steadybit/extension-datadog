@@ -73,3 +73,15 @@ tests:
         host: host.minikube.internal:8080
     asserts:
       - matchSnapshot: {}
+  - it: manifest should match snapshot with podSecurityContext
+    set:
+      podSecurityContext:
+        runAsUser: 2222
+    asserts:
+      - matchSnapshot: {}
+
+  - it: manifest should match snapshot with priority class
+    set:
+      priorityClassName: my-priority-class
+    asserts:
+      - matchSnapshot: {}
