@@ -96,7 +96,6 @@ func TestErrorResponseReturnsIntermediateResult(t *testing.T) {
 	mockedApi.AssertNumberOfCalls(t, "ListMonitors", 2)
 }
 
-
 func TestExlcudeAttributes(t *testing.T) {
 	// Given
 	config.Config.DiscoveryAttributesExcludesMonitor = []string{"datadog.monitor.tags"}
