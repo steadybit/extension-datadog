@@ -4,8 +4,8 @@ github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 h1:sR+/8Yb4s
 github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3IMCy2vIlbG1XG/0ggNQv0SvxCAIpPM5b1nCz56Xno=
 github.com/CloudyKit/jet/v6 v6.2.0 h1:EpcZ6SR9n28BUGtNJSvlBqf90IpjeFr36Tizxhn/oME=
 github.com/CloudyKit/jet/v6 v6.2.0/go.mod h1:d3ypHeIRNo2+XyqnGA8s+aphtcVpjP5hPwP/Lzo7Ro4=
-github.com/DataDog/datadog-api-client-go/v2 v2.17.0 h1:0jI5TotLfWgsydMg/QTHkuoqNCFKSMorjU3ki/fbVI8=
-github.com/DataDog/datadog-api-client-go/v2 v2.17.0/go.mod h1:uJd7G1BONVIyiVw684VMn2XYI1FfN1tx4bRGenAf2bo=
+github.com/DataDog/datadog-api-client-go/v2 v2.18.0 h1:QkX1vY1JtvDeF6N6EarPrJMHlerVGdTvGQOUWqfeVDs=
+github.com/DataDog/datadog-api-client-go/v2 v2.18.0/go.mod h1:lHlfhsNQ2qZclvpVQTfrGowUDIdIzAao38A05f9EQpc=
 github.com/DataDog/zstd v1.5.5 h1:oWf5W7GtOLgp6bciQYDmhHHjdhYkALu6S/5Ni9ZgSvQ=
 github.com/DataDog/zstd v1.5.5/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
 github.com/Joker/hpp v1.0.0 h1:65+iuJYdRXv/XyN62C1uEmmOx3432rNG/rKlX6V7Kkc=
