@@ -71,4 +71,4 @@ container:
 ## linuxpkg: build the linux packages
 .PHONY: linuxpkg
 linuxpkg:
-	goreleaser release --clean --snapshot --skip-sign
+	goreleaser release --clean --snapshot --skip=sign
