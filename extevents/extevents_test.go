@@ -45,27 +45,25 @@ func Test_sendDatadogEvent(t *testing.T) {
 		Tags:           []string{},
 		SourceTypeName: extutil.Ptr("Steadybit"),
 	}
-	sendDatadogEvent(context.Background(), mockedApi, datadogEventBody)
+	sendDatadogEvent(context.Background(), mockedApi, &datadogEventBody)
 
 	// Then
 	mockedApi.AssertNumberOfCalls(t, "SendEvent", 1)
 }
 
-func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
+func Test_getEventBaseTags(t *testing.T) {
 	type args struct {
 		event event_kit_api.EventRequestBody
 	}
 
 	eventTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
-	endedTime := time.Date(2021, 1, 1, 0, 2, 0, 0, time.UTC)
-	startedTime := time.Date(2021, 1, 1, 0, 1, 0, 0, time.UTC)
 	tests := []struct {
 		name string
 		args args
 		want []string
 	}{
 		{
-			name: "Successfully convert event to datadog tags",
+			name: "Successfully get base tags",
 			args: args{
 				event: event_kit_api.EventRequestBody{
 					Environment: extutil.Ptr(event_kit_api.Environment{
@@ -74,19 +72,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 					}),
 					EventName: "experiment.started",
 					EventTime: eventTime,
-					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
-						EndedTime:            extutil.Ptr(endedTime),
-						ExecutionId:          42,
-						ExperimentKey:        "ExperimentKey",
-						FailureReason:        extutil.Ptr("FailureReason"),
-						FailureReasonDetails: extutil.Ptr("FailureReasonDetails"),
-						Hypothesis:           "Hypothesis",
-						Name:                 "Name",
-						PreparedTime:         eventTime,
-						StartedTime:          startedTime,
-						State:                event_kit_api.ExperimentExecutionStateCreated,
-					}),
-					Id: uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
+					Id:        uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
 					Principal: event_kit_api.UserPrincipal{
 						Email:         extutil.Ptr("email"),
 						Name:          "Peter",
@@ -112,21 +98,14 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
 				"tenant_name:name",
 				"tenant_key:key",
-				"execution_id:42",
-				"experiment_key:ExperimentKey",
-				"experiment_name:Name",
-				"execution_state:created",
 				"team_name:gateway",
 				"team_key:test",
 				"principal_type:user",
 				"principal_username:Pan",
-				"principal_name:Peter",
-				"experiment_hypothesis:Hypothesis",
-				"started_time:" + startedTime.Format(time.RFC3339),
-				"ended_time:" + endedTime.Format(time.RFC3339)},
+				"principal_name:Peter"},
 		},
 		{
-			name: "Successfully convert event to datadog tags without Principal",
+			name: "Successfully get base tags without Principal",
 			args: args{
 				event: event_kit_api.EventRequestBody{
 					Environment: extutil.Ptr(event_kit_api.Environment{
@@ -135,19 +114,7 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 					}),
 					EventName: "experiment.started",
 					EventTime: eventTime,
-					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
-						EndedTime:            extutil.Ptr(endedTime),
-						ExecutionId:          42,
-						ExperimentKey:        "ExperimentKey",
-						FailureReason:        extutil.Ptr("FailureReason"),
-						FailureReasonDetails: extutil.Ptr("FailureReasonDetails"),
-						Hypothesis:           "Hypothesis",
-						Name:                 "Name",
-						PreparedTime:         eventTime,
-						StartedTime:          startedTime,
-						State:                event_kit_api.ExperimentExecutionStateCreated,
-					}),
-					Id: uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
+					Id:        uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
 					Principal: event_kit_api.AccessTokenPrincipal{
 						Name:          "MyFancyToken",
 						PrincipalType: string(event_kit_api.AccessToken),
@@ -171,67 +138,85 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
 				"tenant_name:name",
 				"tenant_key:key",
-				"execution_id:42",
-				"experiment_key:ExperimentKey",
-				"experiment_name:Name",
-				"execution_state:created",
 				"team_name:gateway",
 				"team_key:test",
 				"principal_type:access_token",
 				"principal_name:MyFancyToken",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getEventBaseTags(tt.args.event)
+			assert.Equalf(t, tt.want, got, "getEventBaseTags(%v)", tt.args.event)
+		})
+	}
+}
+
+func Test_getExecutionTags(t *testing.T) {
+	type args struct {
+		event event_kit_api.EventRequestBody
+	}
+
+	eventTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	endedTime := time.Date(2021, 1, 1, 0, 2, 0, 0, time.UTC)
+	startedTime := time.Date(2021, 1, 1, 0, 1, 0, 0, time.UTC)
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "Successfully get execution tags",
+			args: args{
+				event: event_kit_api.EventRequestBody{
+					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
+						EndedTime:     extutil.Ptr(endedTime),
+						ExecutionId:   42,
+						ExperimentKey: "ExperimentKey",
+						Reason:        extutil.Ptr("Reason"),
+						ReasonDetails: extutil.Ptr("ReasonDetails"),
+						Hypothesis:    "Hypothesis",
+						Name:          "Name",
+						PreparedTime:  eventTime,
+						StartedTime:   startedTime,
+						State:         event_kit_api.ExperimentExecutionStateCreated,
+					}),
+				},
+			},
+			want: []string{
+				"execution_id:42",
+				"experiment_key:ExperimentKey",
+				"experiment_name:Name",
+				"execution_state:created",
 				"experiment_hypothesis:Hypothesis",
 				"started_time:" + startedTime.Format(time.RFC3339),
 				"ended_time:" + endedTime.Format(time.RFC3339)},
 		},
 		{
-			name: "Successfully convert event to datadog tags without hypothesis",
+			name: "Successfully get execution tags without hypothesis",
 			args: args{
 				event: event_kit_api.EventRequestBody{
-					Environment: extutil.Ptr(event_kit_api.Environment{
-						Id:   "test",
-						Name: "gateway",
-					}),
-					EventName: "experiment.started",
-					EventTime: eventTime,
 					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
-						EndedTime:            extutil.Ptr(endedTime),
-						ExecutionId:          42,
-						ExperimentKey:        "ExperimentKey",
-						FailureReason:        extutil.Ptr("FailureReason"),
-						FailureReasonDetails: extutil.Ptr("FailureReasonDetails"),
-						Hypothesis:           "",
-						Name:                 "Name",
-						PreparedTime:         eventTime,
-						StartedTime:          startedTime,
-						State:                event_kit_api.ExperimentExecutionStateCreated,
+						EndedTime:     extutil.Ptr(endedTime),
+						ExecutionId:   42,
+						ExperimentKey: "ExperimentKey",
+						Reason:        extutil.Ptr("Reason"),
+						ReasonDetails: extutil.Ptr("ReasonDetails"),
+						Hypothesis:    "",
+						Name:          "Name",
+						PreparedTime:  eventTime,
+						StartedTime:   startedTime,
+						State:         event_kit_api.ExperimentExecutionStateCreated,
 					}),
-					Id:        uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
-					Principal: nil,
-					Team: extutil.Ptr(event_kit_api.Team{
-						Id:   "test",
-						Key:  "test",
-						Name: "gateway",
-					}),
-					Tenant: event_kit_api.Tenant{
-						Key:  "key",
-						Name: "name",
-					},
 				},
 			},
 			want: []string{
-				"source:Steadybit",
-				"environment_name:gateway",
-				"event_name:experiment.started",
-				"event_time:2021-01-01 00:00:00 +0000 UTC",
-				"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
-				"tenant_name:name",
-				"tenant_key:key",
 				"execution_id:42",
 				"experiment_key:ExperimentKey",
 				"experiment_name:Name",
 				"execution_state:created",
-				"team_name:gateway",
-				"team_key:test",
 				"started_time:" + startedTime.Format(time.RFC3339),
 				"ended_time:" + endedTime.Format(time.RFC3339)},
 		},
@@ -239,8 +224,8 @@ func Test_convertSteadybitEventToDataDogEventTags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := convertSteadybitEventToDataDogEventTags(tt.args.event)
-			assert.Equalf(t, tt.want, got, "convertSteadybitEventToDataDogEventTags(%v)", tt.args.event)
+			got := getExecutionTags(tt.args.event)
+			assert.Equalf(t, tt.want, got, "getExecutionTags(%v)", tt.args.event)
 		})
 	}
 }
@@ -274,9 +259,6 @@ func Test_getStepTags(t *testing.T) {
 				},
 			},
 			want: []string{
-				"step_state:failed",
-				"step_started_time:2021-01-01T00:01:00Z",
-				"step_ended_time:2021-01-01T00:02:00Z",
 				"step_action_id:com.steadybit.action.example",
 				"step_action_name:example-action",
 				"step_custom_label:My very own label",
@@ -294,7 +276,6 @@ func Test_getStepTags(t *testing.T) {
 				},
 			},
 			want: []string{
-				"step_state:completed",
 				"step_action_id:com.steadybit.action.example",
 			},
 		},
@@ -311,9 +292,12 @@ func Test_getStepTags(t *testing.T) {
 func Test_getTargetTags(t *testing.T) {
 	type args struct {
 		w      http.ResponseWriter
-		target event_kit_api.ExperimentStepExecutionTarget
+		target event_kit_api.ExperimentStepTargetExecution
 	}
 
+	endedTime := time.Date(2021, 1, 1, 0, 2, 0, 0, time.UTC)
+	startedTime := time.Date(2021, 1, 1, 0, 1, 0, 0, time.UTC)
+	id := uuid.New()
 	tests := []struct {
 		name string
 		args args
@@ -322,7 +306,11 @@ func Test_getTargetTags(t *testing.T) {
 		{
 			name: "Successfully get tag for container targets",
 			args: args{
-				target: event_kit_api.ExperimentStepExecutionTarget{
+				target: event_kit_api.ExperimentStepTargetExecution{
+					ExecutionId:   42,
+					ExperimentKey: "ExperimentKey",
+					Id:            id,
+					State:         "completed",
 					AgentHostname: "Agent-1",
 					TargetAttributes: map[string][]string{
 						"k8s.container.name":                       {"example-c1"},
@@ -336,11 +324,18 @@ func Test_getTargetTags(t *testing.T) {
 						"aws.region":                               {"eu-central-1"},
 						"aws.account":                              {"123456789"},
 					},
-					TargetName: "Container",
-					TargetType: "com.steadybit.extension_container.container",
+					TargetName:  "Container",
+					TargetType:  "com.steadybit.extension_container.container",
+					StartedTime: &startedTime,
+					EndedTime:   &endedTime,
 				},
 			},
 			want: []string{
+				"execution_id:42",
+				"experiment_key:ExperimentKey",
+				"execution_state:completed",
+				"started_time:2021-01-01T00:01:00Z",
+				"ended_time:2021-01-01T00:02:00Z",
 				"kube_cluster_name:dev-cluster",
 				"kube_namespace:namespace",
 				"kube_deployment:example",
@@ -359,18 +354,29 @@ func Test_getTargetTags(t *testing.T) {
 		{
 			name: "Successfully deduplicate service tags",
 			args: args{
-				target: event_kit_api.ExperimentStepExecutionTarget{
+				target: event_kit_api.ExperimentStepTargetExecution{
+					ExecutionId:   42,
+					ExperimentKey: "ExperimentKey",
+					Id:            id,
+					State:         "completed",
 					AgentHostname: "Agent-1",
 					TargetAttributes: map[string][]string{
 						"k8s.cluster-name":                                {"dev-cluster"},
 						"k8s.pod.label.tags.datadoghq.com/service":        {"service-1"},
 						"k8s.deployment.label.tags.datadoghq.com/service": {"service-1"},
 					},
-					TargetName: "Container",
-					TargetType: "com.steadybit.extension_container.container",
+					TargetName:  "Container",
+					TargetType:  "com.steadybit.extension_container.container",
+					StartedTime: &startedTime,
+					EndedTime:   &endedTime,
 				},
 			},
 			want: []string{
+				"execution_id:42",
+				"experiment_key:ExperimentKey",
+				"execution_state:completed",
+				"started_time:2021-01-01T00:01:00Z",
+				"ended_time:2021-01-01T00:02:00Z",
 				"kube_cluster_name:dev-cluster",
 				"cluster_name:dev-cluster",
 				"service:service-1",
@@ -379,7 +385,11 @@ func Test_getTargetTags(t *testing.T) {
 		{
 			name: "Should add cluster name to hostname and deduplicate host names",
 			args: args{
-				target: event_kit_api.ExperimentStepExecutionTarget{
+				target: event_kit_api.ExperimentStepTargetExecution{
+					ExecutionId:   42,
+					ExperimentKey: "ExperimentKey",
+					Id:            id,
+					State:         "completed",
 					AgentHostname: "Agent-1",
 					TargetAttributes: map[string][]string{
 						"k8s.cluster-name":     {"dev-cluster"},
@@ -387,11 +397,18 @@ func Test_getTargetTags(t *testing.T) {
 						"host.hostname":        {"host-123"},
 						"application.hostname": {"host-123"},
 					},
-					TargetName: "Container",
-					TargetType: "com.steadybit.extension_container.container",
+					TargetName:  "Container",
+					TargetType:  "com.steadybit.extension_container.container",
+					StartedTime: &startedTime,
+					EndedTime:   &endedTime,
 				},
 			},
 			want: []string{
+				"execution_id:42",
+				"experiment_key:ExperimentKey",
+				"execution_state:completed",
+				"started_time:2021-01-01T00:01:00Z",
+				"ended_time:2021-01-01T00:02:00Z",
 				"kube_cluster_name:dev-cluster",
 				"cluster_name:dev-cluster",
 				"host:host-123-dev-cluster",
@@ -400,17 +417,28 @@ func Test_getTargetTags(t *testing.T) {
 		{
 			name: "Ignore multiple values",
 			args: args{
-				target: event_kit_api.ExperimentStepExecutionTarget{
+				target: event_kit_api.ExperimentStepTargetExecution{
+					ExecutionId:   42,
+					ExperimentKey: "ExperimentKey",
+					Id:            id,
+					State:         "completed",
 					AgentHostname: "Agent-1",
 					TargetAttributes: map[string][]string{
 						"host.hostname": {"Host-1"},
 						"k8s.namespace": {"namespace-1", "namespace-2", "namespace-3"},
 					},
-					TargetName: "Host",
-					TargetType: "com.steadybit.extension_host.host",
+					TargetName:  "Host",
+					TargetType:  "com.steadybit.extension_host.host",
+					StartedTime: &startedTime,
+					EndedTime:   &endedTime,
 				},
 			},
 			want: []string{
+				"execution_id:42",
+				"experiment_key:ExperimentKey",
+				"execution_state:completed",
+				"started_time:2021-01-01T00:01:00Z",
+				"ended_time:2021-01-01T00:02:00Z",
 				"host:Host-1",
 			},
 		},
@@ -427,91 +455,102 @@ func Test_getTargetTags(t *testing.T) {
 func Test_onExperimentStepStarted(t *testing.T) {
 	eventTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	startedTime := time.Date(2021, 1, 1, 0, 1, 0, 0, time.UTC)
+	endedTime := time.Date(2021, 1, 1, 0, 7, 0, 0, time.UTC)
+	stepId := uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e")
 
 	type args struct {
-		event event_kit_api.EventRequestBody
+		stepEvent   event_kit_api.EventRequestBody
+		targetEvent event_kit_api.EventRequestBody
 	}
 	tests := []struct {
 		name string
 		args args
-		want []datadogV1.EventCreateRequest
+		want *datadogV1.EventCreateRequest
 	}{
 		{
-			name: "should emit event for experiment step started",
+			name: "should emit event for experiment target started",
 			args: args{
-				event: event_kit_api.EventRequestBody{
+				stepEvent: event_kit_api.EventRequestBody{
 					Environment: extutil.Ptr(event_kit_api.Environment{
 						Id:   "test",
 						Name: "gateway",
 					}),
 					EventName: "experiment.step.started",
 					EventTime: eventTime,
-					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
+					Id:        stepId,
+					ExperimentStepExecution: extutil.Ptr(event_kit_api.ExperimentStepExecution{
 						ExecutionId:   42,
 						ExperimentKey: "ExperimentKey",
-						Name:          "Name",
-						State:         event_kit_api.ExperimentExecutionStateRunning,
-						StartedTime:   startedTime,
-						Steps: []event_kit_api.ExperimentStepExecution{
-							{
-								Id:         uuid.UUID{},
-								ActionId:   extutil.Ptr("some_action_id"),
-								ActionName: extutil.Ptr("other step"),
-								ActionKind: extutil.Ptr(event_kit_api.Attack),
-								TargetExecutions: &[]event_kit_api.ExperimentStepExecutionTarget{
-									{TargetType: "type", TargetName: "test"},
-								},
-							},
-							{
-								Id:         uuid.MustParse("e2cbfb31-1645-499c-86a2-54097473b877"),
-								ActionId:   extutil.Ptr("some_action_id"),
-								ActionName: extutil.Ptr("started step"),
-								ActionKind: extutil.Ptr(event_kit_api.Attack),
-								TargetExecutions: &[]event_kit_api.ExperimentStepExecutionTarget{
-									{TargetType: "type", TargetName: "test"},
-								},
-							},
-						},
+						Id:            stepId,
+						ActionId:      extutil.Ptr("some_action_id"),
+						ActionName:    extutil.Ptr("started step"),
+						CustomLabel:   extutil.Ptr("custom label"),
+						ActionKind:    extutil.Ptr(event_kit_api.Attack),
 					}),
-					Id:              uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
-					StepExecutionId: extutil.Ptr(uuid.MustParse("e2cbfb31-1645-499c-86a2-54097473b877")),
+					Tenant: event_kit_api.Tenant{
+						Key:  "key",
+						Name: "name",
+					},
+				},
+				targetEvent: event_kit_api.EventRequestBody{
+					Environment: extutil.Ptr(event_kit_api.Environment{
+						Id:   "test",
+						Name: "gateway",
+					}),
+					EventName: "experiment.step.target.started",
+					EventTime: eventTime,
+					Id:        stepId,
+					ExperimentStepTargetExecution: extutil.Ptr(event_kit_api.ExperimentStepTargetExecution{
+						ExecutionId:     42,
+						ExperimentKey:   "ExperimentKey",
+						StepExecutionId: stepId,
+						State:           "completed",
+						TargetType:      "type",
+						TargetName:      "test",
+						StartedTime:     &startedTime,
+						EndedTime:       &endedTime,
+					}),
 					Tenant: event_kit_api.Tenant{
 						Key:  "key",
 						Name: "name",
 					},
 				},
 			},
-			want: []datadogV1.EventCreateRequest{{
+			want: &datadogV1.EventCreateRequest{
 				AggregationKey: extutil.Ptr("steadybit-execution-42"),
 				SourceTypeName: extutil.Ptr("Steadybit"),
 				Tags: []string{
+					"step_action_name:started step",
+					"step_custom_label:custom label",
 					"source:Steadybit",
 					"environment_name:gateway",
-					"event_name:experiment.step.started",
+					"event_name:experiment.step.target.started",
 					"event_time:2021-01-01 00:00:00 +0000 UTC",
 					"event_id:ccf6a26e-588f-446e-8eaa-d16b086e150e",
 					"tenant_name:name",
 					"tenant_key:key",
 					"execution_id:42",
 					"experiment_key:ExperimentKey",
-					"experiment_name:Name",
-					"execution_state:running",
-					"started_time:" + startedTime.Format(time.RFC3339),
-					"step_state:",
-					"step_action_name:started step",
+					"execution_state:completed",
+					"started_time:2021-01-01T00:01:00Z",
+					"ended_time:2021-01-01T00:07:00Z",
 				},
 				Title:        "Experiment 'ExperimentKey' - Attack started",
-				Text:         "%%% \nExperiment `ExperimentKey` - `Name` (execution `42`) - Attack `started step` started.\n\nTarget:test\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%",
+				Text:         "%%% \nExperiment `ExperimentKey` (execution `42`) - Attack `custom label` started.\n\nTarget:test\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%",
 				DateHappened: extutil.Ptr(eventTime.Unix()),
-			}},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := onExperimentStepStarted(tt.args.event)
+			got, err := onExperimentStepStarted(tt.args.stepEvent)
 			require.NoError(t, err)
-			assert.Equalf(t, tt.want, got, "onExperimentStepStarted(%v)", tt.args.event)
+			got, err = onExperimentTargetStarted(tt.args.targetEvent)
+			require.NoError(t, err)
+			assert.Equalf(t, tt.want.Tags, got.Tags, "onExperimentTargetStarted - Tags different")
+			assert.Equalf(t, tt.want.Text, got.Text, "onExperimentTargetStarted - Text different")
+			assert.Equalf(t, tt.want, got, "onExperimentTargetStarted - Something else ist different, take a very close look ;-)")
 		})
 	}
 }

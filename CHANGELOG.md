@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.0 (not yet released)
+
+- Updated to use the new `steadybit/event-kit-api` version `1.3.0`
+  - Requires Platform `>= 1.0.94`
+
 ## v1.7.10
 
 - Possibility to exclude attributes from discovery
@@ -50,7 +55,7 @@
  - Monitor shouldn't have a blast radius
  - Run as non-root user
  - Update dependencies
- 
+
 ## v1.5.0
 
  - Print build information on extension startup.
@@ -75,7 +80,7 @@
 ## v1.1.0
 
  - Correctly mark duration parameter for status check action as required.
- - Add monitor status widgets to the execution view. 
+ - Add monitor status widgets to the execution view.
 
 ## v1.0.0
 
