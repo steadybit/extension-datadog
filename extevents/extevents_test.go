@@ -544,9 +544,9 @@ func Test_onExperimentStepStarted(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := onExperimentStepStarted(tt.args.stepEvent)
+			_, err := onExperimentStepStarted(tt.args.stepEvent)
 			require.NoError(t, err)
-			got, err = onExperimentTargetStarted(tt.args.targetEvent)
+			got, err := onExperimentTargetStarted(tt.args.targetEvent)
 			require.NoError(t, err)
 			assert.Equalf(t, tt.want.Tags, got.Tags, "onExperimentTargetStarted - Tags different")
 			assert.Equalf(t, tt.want.Text, got.Text, "onExperimentTargetStarted - Text different")
