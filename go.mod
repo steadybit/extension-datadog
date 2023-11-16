@@ -15,7 +15,7 @@ require (
 	github.com/steadybit/action-kit/go/action_kit_test v1.2.1
 	github.com/steadybit/discovery-kit/go/discovery_kit_api v1.5.0
 	github.com/steadybit/discovery-kit/go/discovery_kit_commons v0.1.0
-	github.com/steadybit/discovery-kit/go/discovery_kit_test v1.0.2
+	github.com/steadybit/discovery-kit/go/discovery_kit_test v1.1.0
 	github.com/steadybit/event-kit/go/event_kit_api v1.3.1
 	github.com/steadybit/extension-kit v1.8.10
 	github.com/stretchr/testify v1.8.4
@@ -51,7 +51,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.16.0 // indirect
-	github.com/go-resty/resty/v2 v2.7.0 // indirect
+	github.com/go-resty/resty/v2 v2.10.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
