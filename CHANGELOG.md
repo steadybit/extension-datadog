@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.8.0 (not yet released)
+## v1.8.0
 
 - Updated to use the new `steadybit/event-kit-api` version `1.3.0`
   - Requires Platform `>= 1.0.94`
