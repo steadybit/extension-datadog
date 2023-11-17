@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.1
+
+- Update dependencies
+- Fix event creation when linux package is used
+
 ## v1.8.0
 
 - Updated to use the new `steadybit/event-kit-api` version `1.3.0`
