@@ -54,16 +54,26 @@ manifest should match snapshot using podAnnotations and Labels:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -141,16 +151,26 @@ manifest should match snapshot with TLS:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -238,16 +258,26 @@ manifest should match snapshot with extra env vars:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -323,16 +353,26 @@ manifest should match snapshot with extra labels:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -410,16 +450,26 @@ manifest should match snapshot with mock server:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -499,16 +549,26 @@ manifest should match snapshot with mutual TLS:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -602,16 +662,26 @@ manifest should match snapshot with mutual TLS using containerPaths:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -685,16 +755,26 @@ manifest should match snapshot with podSecurityContext:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -770,16 +850,26 @@ manifest should match snapshot with priority class:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
@@ -854,16 +944,26 @@ manifest should match snapshot without TLS:
               image: ghcr.io/steadybit/extension-datadog:latest
               imagePullPolicy: Always
               livenessProbe:
+                failureThreshold: 5
                 httpGet:
                   path: /health/liveness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
               name: extension
               ports:
                 - containerPort: 8090
               readinessProbe:
+                failureThreshold: 3
                 httpGet:
                   path: /health/readiness
                   port: 8091
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
               resources:
                 limits:
                   cpu: 200m
