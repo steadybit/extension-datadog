@@ -129,7 +129,7 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 	}
 
 	message := "Created by ![Steadybit](https://downloads.steadybit.com/logo-extension-datadog.jpg)"
-	if state.ExecutionUri != nil {
+	if state.ExperimentUri != nil {
 		message = message + fmt.Sprintf("\n\n[Open Experiment](%s)", *state.ExperimentUri)
 	}
 	if state.ExecutionUri != nil {
