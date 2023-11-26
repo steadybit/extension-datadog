@@ -8,6 +8,7 @@ import (
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
+	"github.com/steadybit/discovery-kit/go/discovery_kit_sdk"
 	"github.com/steadybit/event-kit/go/event_kit_api"
 	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-datadog/extevents"
@@ -32,7 +33,7 @@ func main() {
 	config.ValidateConfiguration()
 
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getExtensionList))
-	extmonitor.RegisterMonitorDiscoveryHandlers()
+	discovery_kit_sdk.Register(extmonitor.NewMonitorDiscovery())
 	action_kit_sdk.RegisterAction(extmonitor.NewMonitorStatusCheckAction())
 	action_kit_sdk.RegisterAction(extmonitor.NewMonitorDowntimeAction())
 	extevents.RegisterEventListenerHandlers()
@@ -56,28 +57,8 @@ type ExtensionListResponse struct {
 
 func getExtensionList() ExtensionListResponse {
 	return ExtensionListResponse{
-		ActionList: action_kit_sdk.GetActionList(),
-		DiscoveryList: discovery_kit_api.DiscoveryList{
-			Discoveries: []discovery_kit_api.DescribingEndpointReference{
-				{
-					Method: "GET",
-					Path:   "/monitor/discovery",
-				},
-			},
-			TargetTypes: []discovery_kit_api.DescribingEndpointReference{
-				{
-					Method: "GET",
-					Path:   "/monitor/discovery/target-description",
-				},
-			},
-			TargetAttributes: []discovery_kit_api.DescribingEndpointReference{
-				{
-					Method: "GET",
-					Path:   "/monitor/discovery/attribute-descriptions",
-				},
-			},
-			TargetEnrichmentRules: []discovery_kit_api.DescribingEndpointReference{},
-		},
+		ActionList:    action_kit_sdk.GetActionList(),
+		DiscoveryList: discovery_kit_sdk.GetDiscoveryList(),
 		EventListenerList: event_kit_api.EventListenerList{
 			EventListeners: []event_kit_api.EventListener{
 				{
