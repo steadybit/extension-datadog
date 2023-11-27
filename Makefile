@@ -65,7 +65,6 @@ run: tidy build
 ## container: build the container image
 .PHONY: container
 container:
-	git tag -d $$(git tag -l | grep -v "^v[0-9]*.[0-9]*.[0-9]*") # delete all tags locally that are not semver
 	docker buildx build --build-arg BUILD_WITH_COVERAGE="true" -t extension-datadog:latest --output=type=docker .
 
 ## linuxpkg: build the linux packages

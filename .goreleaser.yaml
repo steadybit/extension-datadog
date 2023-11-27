@@ -6,6 +6,11 @@ before:
 
 release:
   prerelease: "false"
+
+git:
+  ignore_tags:
+    - steadybit-extension-datadog-*
+
 builds:
   - binary: extension-datadog
     env:

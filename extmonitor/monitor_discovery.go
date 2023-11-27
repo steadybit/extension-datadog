@@ -10,35 +10,41 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_commons"
+	"github.com/steadybit/discovery-kit/go/discovery_kit_sdk"
 	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-kit/extbuild"
-	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-func RegisterMonitorDiscoveryHandlers() {
-	exthttp.RegisterHttpHandler("/monitor/discovery", exthttp.GetterAsHandler(getMonitorDiscoveryDescription))
-	exthttp.RegisterHttpHandler("/monitor/discovery/target-description", exthttp.GetterAsHandler(getMonitorTargetDescription))
-	exthttp.RegisterHttpHandler("/monitor/discovery/attribute-descriptions", exthttp.GetterAsHandler(getMonitorAttributeDescriptions))
-	exthttp.RegisterHttpHandler("/monitor/discovery/discovered-targets", getMonitorDiscoveryResults)
+type monitorDiscovery struct {
 }
 
-func getMonitorDiscoveryDescription() discovery_kit_api.DiscoveryDescription {
+var (
+	_ discovery_kit_sdk.TargetDescriber    = (*monitorDiscovery)(nil)
+	_ discovery_kit_sdk.AttributeDescriber = (*monitorDiscovery)(nil)
+)
+
+func NewMonitorDiscovery() discovery_kit_sdk.TargetDiscovery {
+	discovery := &monitorDiscovery{}
+	return discovery_kit_sdk.NewCachedTargetDiscovery(discovery,
+		discovery_kit_sdk.WithRefreshTargetsNow(),
+		discovery_kit_sdk.WithRefreshTargetsInterval(context.Background(), 1*time.Minute),
+	)
+}
+func (d *monitorDiscovery) Describe() discovery_kit_api.DiscoveryDescription {
 	return discovery_kit_api.DiscoveryDescription{
 		Id:         monitorTargetId,
 		RestrictTo: extutil.Ptr(discovery_kit_api.LEADER),
 		Discover: discovery_kit_api.DescribingEndpointReferenceWithCallInterval{
-			Method:       "GET",
-			Path:         "/monitor/discovery/discovered-targets",
-			CallInterval: extutil.Ptr("10m"),
+			CallInterval: extutil.Ptr("1m"),
 		},
 	}
 }
 
-func getMonitorTargetDescription() discovery_kit_api.TargetDescription {
+func (d *monitorDiscovery) DescribeTarget() discovery_kit_api.TargetDescription {
 	return discovery_kit_api.TargetDescription{
 		Id:       monitorTargetId,
 		Label:    discovery_kit_api.PluralLabel{One: "Datadog monitor", Other: "Datadog monitors"},
@@ -60,42 +66,39 @@ func getMonitorTargetDescription() discovery_kit_api.TargetDescription {
 	}
 }
 
-func getMonitorAttributeDescriptions() discovery_kit_api.AttributeDescriptions {
-	return discovery_kit_api.AttributeDescriptions{
-		Attributes: []discovery_kit_api.AttributeDescription{
-			{
-				Attribute: "datadog.monitor.name",
-				Label: discovery_kit_api.PluralLabel{
-					One:   "Datadog monitor name",
-					Other: "Datadog monitor names",
-				},
-			}, {
-				Attribute: "datadog.monitor.id",
-				Label: discovery_kit_api.PluralLabel{
-					One:   "Datadog monitor ID",
-					Other: "Datadog monitor IDs",
-				},
-			}, {
-				Attribute: "datadog.monitor.tags",
-				Label: discovery_kit_api.PluralLabel{
-					One:   "Datadog monitor tags",
-					Other: "Datadog monitor tags",
-				},
+func (d *monitorDiscovery) DescribeAttributes() []discovery_kit_api.AttributeDescription {
+	return []discovery_kit_api.AttributeDescription{
+		{
+			Attribute: "datadog.monitor.name",
+			Label: discovery_kit_api.PluralLabel{
+				One:   "Datadog monitor name",
+				Other: "Datadog monitor names",
+			},
+		}, {
+			Attribute: "datadog.monitor.id",
+			Label: discovery_kit_api.PluralLabel{
+				One:   "Datadog monitor ID",
+				Other: "Datadog monitor IDs",
+			},
+		}, {
+			Attribute: "datadog.monitor.tags",
+			Label: discovery_kit_api.PluralLabel{
+				One:   "Datadog monitor tags",
+				Other: "Datadog monitor tags",
 			},
 		},
 	}
 }
 
-func getMonitorDiscoveryResults(w http.ResponseWriter, r *http.Request, _ []byte) {
-	targets := GetAllMonitors(r.Context(), &config.Config, config.Config.SiteUrl)
-	exthttp.WriteBody(w, discovery_kit_api.DiscoveredTargets{Targets: targets})
+func (d *monitorDiscovery) DiscoverTargets(ctx context.Context) ([]discovery_kit_api.Target, error) {
+	return getAllMonitors(ctx, &config.Config, config.Config.SiteUrl), nil
 }
 
 type ListMonitorsApi interface {
 	ListMonitors(ctx context.Context, params datadogV1.ListMonitorsOptionalParameters) ([]datadogV1.Monitor, *http.Response, error)
 }
 
-func GetAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []discovery_kit_api.Target {
+func getAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []discovery_kit_api.Target {
 	result := make([]discovery_kit_api.Target, 0, 500)
 
 	parameters := datadogV1.NewListMonitorsOptionalParameters()

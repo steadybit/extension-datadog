@@ -56,7 +56,7 @@ func TestIterateThroughMonitorsResponses(t *testing.T) {
 	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(2)).Return(page3, &okResponse, nil)
 
 	// When
-	monitors := GetAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
+	monitors := getAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
 
 	// Then
 	require.Len(t, monitors, 2)
@@ -87,7 +87,7 @@ func TestErrorResponseReturnsIntermediateResult(t *testing.T) {
 	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(1)).Return([]datadogV1.Monitor{}, &okResponse, fmt.Errorf("Intentional Test error"))
 
 	// When
-	monitors := GetAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
+	monitors := getAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
 
 	// Then
 	require.Len(t, monitors, 1)
@@ -115,7 +115,7 @@ func TestExlcudeAttributes(t *testing.T) {
 	mockedApi.On("ListMonitors", mock.Anything, getPageMatcher(1)).Return(page2, &okResponse, nil)
 
 	// When
-	monitors := GetAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
+	monitors := getAllMonitors(context.Background(), mockedApi, "https://app.datadoghq.eu")
 
 	// Then
 	require.Len(t, monitors, 1)
