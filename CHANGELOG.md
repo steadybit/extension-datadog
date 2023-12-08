@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.8.2
+
+- Removed link to Steadybit homepage from event messages
+- use discovery_kit_sdk for discoveries
+- update dependencies
+
 ## v1.8.1
 
 - Update dependencies
