@@ -536,7 +536,7 @@ func Test_onExperimentStepStarted(t *testing.T) {
 					"ended_time:2021-01-01T00:07:00Z",
 				},
 				Title:        "Experiment 'ExperimentKey' - Attack started",
-				Text:         "%%% \nExperiment `ExperimentKey` (execution `42`) - Attack `custom label` started.\n\nTarget:test\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%",
+				Text:         "%%% \nExperiment `ExperimentKey` (execution `42`) - Attack `custom label` started.\n\nTarget:test\n %%%",
 				DateHappened: extutil.Ptr(eventTime.Unix()),
 			},
 		},

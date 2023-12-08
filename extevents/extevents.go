@@ -71,7 +71,7 @@ func onExperimentStarted(event event_kit_api.EventRequestBody) (*datadogV1.Event
 	tags = append(tags, getExecutionTags(event)...)
 	return &datadogV1.EventCreateRequest{
 		Title: fmt.Sprintf("Experiment '%s' started", event.ExperimentExecution.ExperimentKey),
-		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) started.\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
+		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) started.\n %%%%%%",
 			event.ExperimentExecution.ExperimentKey,
 			event.ExperimentExecution.Name,
 			event.ExperimentExecution.ExecutionId),
@@ -88,7 +88,7 @@ func onExperimentCompleted(event event_kit_api.EventRequestBody) (*datadogV1.Eve
 	tags = append(tags, getExecutionTags(event)...)
 	return &datadogV1.EventCreateRequest{
 		Title: fmt.Sprintf("Experiment '%s' ended", event.ExperimentExecution.ExperimentKey),
-		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) ended with state `%s` after %.2f seconds.\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
+		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` - `%s` (execution `%.0f`) ended with state `%s` after %.2f seconds.\n %%%%%%",
 			event.ExperimentExecution.ExperimentKey,
 			event.ExperimentExecution.Name,
 			event.ExperimentExecution.ExecutionId,
@@ -143,7 +143,7 @@ func onExperimentTargetStarted(event event_kit_api.EventRequestBody) (*datadogV1
 
 	return &datadogV1.EventCreateRequest{
 		Title: fmt.Sprintf("Experiment '%s' - Attack started", event.ExperimentStepTargetExecution.ExperimentKey),
-		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` started.\n\nTarget:%s\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
+		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` started.\n\nTarget:%s\n %%%%%%",
 			event.ExperimentStepTargetExecution.ExperimentKey,
 			event.ExperimentStepTargetExecution.ExecutionId,
 			stepInfo.ActionName,
@@ -173,7 +173,7 @@ func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadog
 
 	return &datadogV1.EventCreateRequest{
 		Title: fmt.Sprintf("Experiment '%s' - Attack ended", event.ExperimentStepTargetExecution.ExperimentKey),
-		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` ended with state `%s` after %.2f seconds.\n\nTarget:%s\n\n_The experiment is executed through [Steadybit](https://steadybit.com/?utm_campaign=extension-datadog&utm_source=extension-datadog-event)._\n %%%%%%",
+		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` ended with state `%s` after %.2f seconds.\n\nTarget:%s\n %%%%%%",
 			event.ExperimentStepTargetExecution.ExperimentKey,
 			event.ExperimentStepTargetExecution.ExecutionId,
 			stepInfo.ActionName,
