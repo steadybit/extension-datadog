@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.3
+
+- update dependencies
+
 ## v1.8.2
 
 - Removed link to Steadybit homepage from event messages
