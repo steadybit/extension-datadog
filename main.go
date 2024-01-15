@@ -82,12 +82,6 @@ func getExtensionList() ExtensionListResponse {
 				},
 				{
 					Method:     "POST",
-					Path:       "/events/experiment-step-completed",
-					ListenTo:   []string{"experiment.execution.step-completed", "experiment.execution.step-canceled", "experiment.execution.step-errored", "experiment.execution.step-failed"},
-					RestrictTo: extutil.Ptr(event_kit_api.Leader),
-				},
-				{
-					Method:     "POST",
 					Path:       "/events/experiment-target-started",
 					ListenTo:   []string{"experiment.execution.target-started"},
 					RestrictTo: extutil.Ptr(event_kit_api.Leader),

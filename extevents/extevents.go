@@ -24,7 +24,6 @@ func RegisterEventListenerHandlers() {
 	exthttp.RegisterHttpHandler("/events/experiment-started", handle(onExperimentStarted))
 	exthttp.RegisterHttpHandler("/events/experiment-completed", handle(onExperimentCompleted))
 	exthttp.RegisterHttpHandler("/events/experiment-step-started", handle(onExperimentStepStarted))
-	exthttp.RegisterHttpHandler("/events/experiment-step-completed", handle(onExperimentStepCompleted))
 	exthttp.RegisterHttpHandler("/events/experiment-target-started", handle(onExperimentTargetStarted))
 	exthttp.RegisterHttpHandler("/events/experiment-target-completed", handle(onExperimentTargetCompleted))
 }
@@ -34,7 +33,7 @@ type SendEventApi interface {
 }
 
 var (
-	stepInfos = sync.Map{}
+	stepExecutions = sync.Map{}
 )
 
 type StepInfo struct {
@@ -83,6 +82,15 @@ func onExperimentStarted(event event_kit_api.EventRequestBody) (*datadogV1.Event
 }
 
 func onExperimentCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
+	stepExecutions.Range(func(key, value interface{}) bool {
+		stepExecution := value.(event_kit_api.ExperimentStepExecution)
+		if stepExecution.ExecutionId == event.ExperimentExecution.ExecutionId {
+			log.Debug().Msgf("Delete step execution data for id %.0f", stepExecution.ExecutionId)
+			stepExecutions.Delete(key)
+		}
+		return true
+	})
+
 	duration := event.ExperimentExecution.EndedTime.Sub(event.ExperimentExecution.PreparedTime)
 	tags := getEventBaseTags(event)
 	tags = append(tags, getExecutionTags(event)...)
@@ -105,24 +113,7 @@ func onExperimentStepStarted(event event_kit_api.EventRequestBody) (*datadogV1.E
 	if event.ExperimentStepExecution == nil {
 		return nil, errors.New("missing ExperimentStepExecution in event")
 	}
-	if event.ExperimentStepExecution.ActionKind != nil && *event.ExperimentStepExecution.ActionKind == event_kit_api.Attack {
-		actionName := *event.ExperimentStepExecution.ActionId
-		if event.ExperimentStepExecution.ActionName != nil {
-			actionName = *event.ExperimentStepExecution.ActionName
-		}
-		if event.ExperimentStepExecution.CustomLabel != nil {
-			actionName = *event.ExperimentStepExecution.CustomLabel
-		}
-		stepInfos.Store(event.ExperimentStepExecution.Id, StepInfo{actionName, getStepTags(*event.ExperimentStepExecution)})
-	}
-	return nil, nil
-}
-
-func onExperimentStepCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
-	if event.ExperimentStepExecution == nil {
-		return nil, errors.New("missing ExperimentStepExecution in event")
-	}
-	stepInfos.Delete(event.ExperimentStepExecution.Id)
+	stepExecutions.Store(event.ExperimentStepExecution.Id, *event.ExperimentStepExecution)
 	return nil, nil
 }
 
@@ -131,28 +122,43 @@ func onExperimentTargetStarted(event event_kit_api.EventRequestBody) (*datadogV1
 		return nil, errors.New("missing ExperimentStepTargetExecution in event")
 	}
 
-	var v, ok = stepInfos.Load(event.ExperimentStepTargetExecution.StepExecutionId)
+	var v, ok = stepExecutions.Load(event.ExperimentStepTargetExecution.StepExecutionId)
 	if !ok {
 		log.Warn().Msgf("Could not find step infos for step execution id %s", event.ExperimentStepTargetExecution.StepExecutionId)
 		return nil, nil
 	}
-	stepInfo := v.(StepInfo)
+	stepExecution := v.(event_kit_api.ExperimentStepExecution)
 
-	tags := append(stepInfo.Tags, getEventBaseTags(event)...)
-	tags = append(tags, getTargetTags(*event.ExperimentStepTargetExecution)...)
+	if stepExecution.ActionKind != nil && *stepExecution.ActionKind == event_kit_api.Attack {
+		tags := append(getStepTags(stepExecution), getEventBaseTags(event)...)
+		tags = append(tags, getTargetTags(*event.ExperimentStepTargetExecution)...)
 
-	return &datadogV1.EventCreateRequest{
-		Title: fmt.Sprintf("Experiment '%s' - Attack started", event.ExperimentStepTargetExecution.ExperimentKey),
-		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` started.\n\nTarget:%s\n %%%%%%",
-			event.ExperimentStepTargetExecution.ExperimentKey,
-			event.ExperimentStepTargetExecution.ExecutionId,
-			stepInfo.ActionName,
-			getTargetName(*event.ExperimentStepTargetExecution)),
-		Tags:           tags,
-		SourceTypeName: extutil.Ptr("Steadybit"),
-		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
-		DateHappened:   extutil.Ptr(event.EventTime.Unix()),
-	}, nil
+		return &datadogV1.EventCreateRequest{
+			Title: fmt.Sprintf("Experiment '%s' - Attack started", event.ExperimentStepTargetExecution.ExperimentKey),
+			Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` started.\n\nTarget:%s\n %%%%%%",
+				event.ExperimentStepTargetExecution.ExperimentKey,
+				event.ExperimentStepTargetExecution.ExecutionId,
+				getActionName(stepExecution),
+				getTargetName(*event.ExperimentStepTargetExecution)),
+			Tags:           tags,
+			SourceTypeName: extutil.Ptr("Steadybit"),
+			AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
+			DateHappened:   extutil.Ptr(event.EventTime.Unix()),
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func getActionName(stepExecution event_kit_api.ExperimentStepExecution) string {
+	actionName := *stepExecution.ActionId
+	if stepExecution.ActionName != nil {
+		actionName = *stepExecution.ActionName
+	}
+	if stepExecution.CustomLabel != nil {
+		actionName = *stepExecution.CustomLabel
+	}
+	return actionName
 }
 
 func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
@@ -160,31 +166,34 @@ func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadog
 		return nil, errors.New("missing ExperimentStepTargetExecution in event")
 	}
 
-	var v, ok = stepInfos.Load(event.ExperimentStepTargetExecution.StepExecutionId)
+	var v, ok = stepExecutions.Load(event.ExperimentStepTargetExecution.StepExecutionId)
 	if !ok {
 		log.Warn().Msgf("Could not find step infos for step execution id %s", event.ExperimentStepTargetExecution.StepExecutionId)
 		return nil, nil
 	}
-	stepInfo := v.(StepInfo)
+	stepExecution := v.(event_kit_api.ExperimentStepExecution)
 
-	tags := append(stepInfo.Tags, getEventBaseTags(event)...)
-	tags = append(tags, getTargetTags(*event.ExperimentStepTargetExecution)...)
-	duration := event.ExperimentStepTargetExecution.EndedTime.Sub(*event.ExperimentStepTargetExecution.StartedTime)
+	if stepExecution.ActionKind != nil && *stepExecution.ActionKind == event_kit_api.Attack {
+		tags := append(getStepTags(stepExecution), getEventBaseTags(event)...)
+		tags = append(tags, getTargetTags(*event.ExperimentStepTargetExecution)...)
+		duration := event.ExperimentStepTargetExecution.EndedTime.Sub(*event.ExperimentStepTargetExecution.StartedTime)
 
-	return &datadogV1.EventCreateRequest{
-		Title: fmt.Sprintf("Experiment '%s' - Attack ended", event.ExperimentStepTargetExecution.ExperimentKey),
-		Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` ended with state `%s` after %.2f seconds.\n\nTarget:%s\n %%%%%%",
-			event.ExperimentStepTargetExecution.ExperimentKey,
-			event.ExperimentStepTargetExecution.ExecutionId,
-			stepInfo.ActionName,
-			event.ExperimentStepTargetExecution.State,
-			duration.Seconds(),
-			getTargetName(*event.ExperimentStepTargetExecution)),
-		Tags:           tags,
-		SourceTypeName: extutil.Ptr("Steadybit"),
-		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
-		DateHappened:   extutil.Ptr(event.EventTime.Unix()),
-	}, nil
+		return &datadogV1.EventCreateRequest{
+			Title: fmt.Sprintf("Experiment '%s' - Attack ended", event.ExperimentStepTargetExecution.ExperimentKey),
+			Text: fmt.Sprintf("%%%%%% \nExperiment `%s` (execution `%.0f`) - Attack `%s` ended with state `%s` after %.2f seconds.\n\nTarget:%s\n %%%%%%",
+				event.ExperimentStepTargetExecution.ExperimentKey,
+				event.ExperimentStepTargetExecution.ExecutionId,
+				getActionName(stepExecution),
+				event.ExperimentStepTargetExecution.State,
+				duration.Seconds(),
+				getTargetName(*event.ExperimentStepTargetExecution)),
+			Tags:           tags,
+			SourceTypeName: extutil.Ptr("Steadybit"),
+			AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
+			DateHappened:   extutil.Ptr(event.EventTime.Unix()),
+		}, nil
+	}
+	return nil, nil
 }
 
 func getTargetName(target event_kit_api.ExperimentStepTargetExecution) string {
