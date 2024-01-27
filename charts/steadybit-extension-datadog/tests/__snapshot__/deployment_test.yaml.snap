@@ -52,8 +52,8 @@ manifest should match snapshot using podAnnotations and Labels:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -150,8 +150,8 @@ manifest should match snapshot with TLS:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -258,8 +258,8 @@ manifest should match snapshot with extra env vars:
                   name: env-configmap
                 - name: env-secrets
                   secretRef: null
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -354,8 +354,8 @@ manifest should match snapshot with extra labels:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -452,8 +452,8 @@ manifest should match snapshot with mock server:
                   value: http
                 - name: STEADYBIT_EXTENSION_TESTING_HOST
                   value: host.minikube.internal:8080
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -552,8 +552,8 @@ manifest should match snapshot with mutual TLS:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -666,8 +666,8 @@ manifest should match snapshot with mutual TLS using containerPaths:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -760,8 +760,8 @@ manifest should match snapshot with podSecurityContext:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -856,8 +856,8 @@ manifest should match snapshot with priority class:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
@@ -951,8 +951,8 @@ manifest should match snapshot without TLS:
                     secretKeyRef:
                       key: site-url
                       name: steadybit-extension-datadog
-              image: ghcr.io/steadybit/extension-datadog:latest
-              imagePullPolicy: Always
+              image: ghcr.io/steadybit/extension-datadog:v0.0.0
+              imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 5
                 httpGet:
