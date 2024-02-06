@@ -36,8 +36,7 @@ func NewMonitorDiscovery() discovery_kit_sdk.TargetDiscovery {
 }
 func (d *monitorDiscovery) Describe() discovery_kit_api.DiscoveryDescription {
 	return discovery_kit_api.DiscoveryDescription{
-		Id:         monitorTargetId,
-		RestrictTo: extutil.Ptr(discovery_kit_api.LEADER),
+		Id: monitorTargetId,
 		Discover: discovery_kit_api.DescribingEndpointReferenceWithCallInterval{
 			CallInterval: extutil.Ptr("1m"),
 		},

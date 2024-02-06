@@ -18,7 +18,6 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-kit/extruntime"
-	"github.com/steadybit/extension-kit/extutil"
 	_ "net/http/pprof" //allow pprof
 )
 
@@ -65,32 +64,26 @@ func getExtensionList() ExtensionListResponse {
 					Method:   "POST",
 					Path:     "/events/experiment-started",
 					ListenTo: []string{"experiment.execution.created"},
-
-					RestrictTo: extutil.Ptr(event_kit_api.Leader),
 				},
 				{
-					Method:     "POST",
-					Path:       "/events/experiment-completed",
-					ListenTo:   []string{"experiment.execution.completed", "experiment.execution.failed", "experiment.execution.canceled", "experiment.execution.errored"},
-					RestrictTo: extutil.Ptr(event_kit_api.Leader),
+					Method:   "POST",
+					Path:     "/events/experiment-completed",
+					ListenTo: []string{"experiment.execution.completed", "experiment.execution.failed", "experiment.execution.canceled", "experiment.execution.errored"},
 				},
 				{
-					Method:     "POST",
-					Path:       "/events/experiment-step-started",
-					ListenTo:   []string{"experiment.execution.step-started"},
-					RestrictTo: extutil.Ptr(event_kit_api.Leader),
+					Method:   "POST",
+					Path:     "/events/experiment-step-started",
+					ListenTo: []string{"experiment.execution.step-started"},
 				},
 				{
-					Method:     "POST",
-					Path:       "/events/experiment-target-started",
-					ListenTo:   []string{"experiment.execution.target-started"},
-					RestrictTo: extutil.Ptr(event_kit_api.Leader),
+					Method:   "POST",
+					Path:     "/events/experiment-target-started",
+					ListenTo: []string{"experiment.execution.target-started"},
 				},
 				{
-					Method:     "POST",
-					Path:       "/events/experiment-target-completed",
-					ListenTo:   []string{"experiment.execution.target-completed", "experiment.execution.target-canceled", "experiment.execution.target-errored", "experiment.execution.target-failed"},
-					RestrictTo: extutil.Ptr(event_kit_api.Leader),
+					Method:   "POST",
+					Path:     "/events/experiment-target-completed",
+					ListenTo: []string{"experiment.execution.target-completed", "experiment.execution.target-canceled", "experiment.execution.target-errored", "experiment.execution.target-failed"},
 				},
 			},
 		},
