@@ -73,7 +73,7 @@ the [documentation](https://docs.steadybit.com/integrate-with-steadybit/extensio
 
 ### Linux Package
 
-Please use our [outpost-linux.sh script](https://docs.steadybit.com/install-and-configure/install-outpost-agent-preview/install-on-linux-hosts) to install the extension on your Linux machine.
+Please use our [agent-linux.sh script](https://docs.steadybit.com/install-and-configure/install-agent/install-on-linux-hosts) to install the extension on your Linux machine.
 The script will download the latest version of the extension and install it using the package manager.
 
 After installing configure the extension by editing `/etc/steadybit/extension-datadog` and then restart the service.
@@ -82,8 +82,8 @@ After installing configure the extension by editing `/etc/steadybit/extension-da
 ## Proxy
 To communicate to Datadog via a proxy, we need the environment variable `https_proxy` to be set.
 This can be set via helm using the extraEnv variable
-    
+
 ```bash
 --set "extraEnv[0].name=HTTPS_PROXY" \
---set "extraEnv[0].value=https:\\user:pwd@CompanyProxy.com:8888" 
+--set "extraEnv[0].value=https:\\user:pwd@CompanyProxy.com:8888"
 ```
