@@ -1,5 +1,5 @@
-github.com/DataDog/datadog-api-client-go/v2 v2.20.0 h1:80T+UuTh+28qODc2vw+HxzMoIu0dYBT7/RCHXxdYpJE=
-github.com/DataDog/datadog-api-client-go/v2 v2.20.0/go.mod h1:oD5Lx8Li3oPRa/BSBenkn4i48z+91gwYORF/+6ph71g=
+github.com/DataDog/datadog-api-client-go/v2 v2.22.0 h1:+DtWu4PjGxsJU8FESjPi7C2rTDMojNungejsIzNFe70=
+github.com/DataDog/datadog-api-client-go/v2 v2.22.0/go.mod h1:QKOu6vscsh87fMY1lHfLEmNSunyXImj8BUaUWJXOehc=
 github.com/DataDog/zstd v1.5.5 h1:oWf5W7GtOLgp6bciQYDmhHHjdhYkALu6S/5Ni9ZgSvQ=
 github.com/DataDog/zstd v1.5.5/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
 github.com/KimMachineGun/automemlimit v0.5.0 h1:BeOe+BbJc8L5chL3OwzVYjVzyvPALdd5wxVVOWuUZmQ=
