@@ -5,8 +5,6 @@ module github.com/steadybit/extension-datadog
 
 go 1.21.0
 
-toolchain go1.22.0
-
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.23.0
 	github.com/KimMachineGun/automemlimit v0.5.0
