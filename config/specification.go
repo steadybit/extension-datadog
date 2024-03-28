@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
 	"net/http"
 )
 
@@ -71,13 +72,13 @@ func (s *Specification) GetMonitor(ctx context.Context, monitorId int64, params 
 	return api.GetMonitor(s.WrapContextWithDatadogContextValues(ctx), monitorId, params)
 }
 
-func (s *Specification) CreateDowntime(ctx context.Context, downtimeBody datadogV1.Downtime) (datadogV1.Downtime, *http.Response, error) {
-	api := datadogV1.NewDowntimesApi(s.createApiClient())
+func (s *Specification) CreateDowntime(ctx context.Context, downtimeBody datadogV2.DowntimeCreateRequest) (datadogV2.DowntimeResponse, *http.Response, error) {
+	api := datadogV2.NewDowntimesApi(s.createApiClient())
 	return api.CreateDowntime(s.WrapContextWithDatadogContextValues(ctx), downtimeBody)
 }
 
-func (s *Specification) CancelDowntime(ctx context.Context, downtimeId int64) (*http.Response, error) {
-	api := datadogV1.NewDowntimesApi(s.createApiClient())
+func (s *Specification) CancelDowntime(ctx context.Context, downtimeId string) (*http.Response, error) {
+	api := datadogV2.NewDowntimesApi(s.createApiClient())
 	return api.CancelDowntime(s.WrapContextWithDatadogContextValues(ctx), downtimeId)
 }
 

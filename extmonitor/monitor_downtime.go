@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
-	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/extension-datadog/config"
@@ -31,7 +31,7 @@ type MonitorDowntimeState struct {
 	MonitorId     int64
 	End           time.Time
 	Notify        bool
-	DowntimeId    *int64
+	DowntimeId    *string
 	ExperimentUri *string
 	ExecutionUri  *string
 }
@@ -118,14 +118,14 @@ func (m *MonitorDowntimeAction) Stop(ctx context.Context, state *MonitorDowntime
 }
 
 type MonitorDowntimeApi interface {
-	CreateDowntime(ctx context.Context, downtimeBody datadogV1.Downtime) (datadogV1.Downtime, *http.Response, error)
-	CancelDowntime(ctx context.Context, downtimeId int64) (*http.Response, error)
+	CreateDowntime(ctx context.Context, downtimeBody datadogV2.DowntimeCreateRequest) (datadogV2.DowntimeResponse, *http.Response, error)
+	CancelDowntime(ctx context.Context, downtimeId string) (*http.Response, error)
 }
 
 func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api MonitorDowntimeApi) (*action_kit_api.StartResult, error) {
-	var notifyEndType []datadogV1.NotifyEndType
+	var notifyEndType []datadogV2.DowntimeNotifyEndStateActions
 	if state.Notify {
-		notifyEndType = []datadogV1.NotifyEndType{datadogV1.NOTIFYENDTYPE_CANCELED, datadogV1.NOTIFYENDTYPE_EXPIRED}
+		notifyEndType = []datadogV2.DowntimeNotifyEndStateActions{datadogV2.DOWNTIMENOTIFYENDSTATEACTIONS_CANCELED, datadogV2.DOWNTIMENOTIFYENDSTATEACTIONS_EXPIRED}
 	}
 
 	message := "Created by ![Steadybit](https://downloads.steadybit.com/logo-extension-datadog.jpg)"
@@ -136,13 +136,26 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 		message = message + fmt.Sprintf("\n\n[Open Execution](%s)", *state.ExecutionUri)
 	}
 
-	downtimeRequest := datadogV1.Downtime{
-		MonitorId:                     *datadog.NewNullableInt64(&state.MonitorId),
-		Message:                       *datadog.NewNullableString(extutil.Ptr(message)),
-		End:                           *datadog.NewNullableInt64(extutil.Ptr(state.End.Unix())),
-		MuteFirstRecoveryNotification: extutil.Ptr(true),
-		NotifyEndTypes:                notifyEndType,
-		Scope:                         []string{"*"},
+	downtimeRequest := datadogV2.DowntimeCreateRequest{
+		Data: datadogV2.DowntimeCreateRequestData{
+			Type: datadogV2.DOWNTIMERESOURCETYPE_DOWNTIME,
+			Attributes: datadogV2.DowntimeCreateRequestAttributes{
+				MonitorIdentifier: datadogV2.DowntimeMonitorIdentifier{
+					DowntimeMonitorIdentifierId: &datadogV2.DowntimeMonitorIdentifierId{
+						MonitorId: state.MonitorId,
+					},
+				},
+				Message: *datadog.NewNullableString(extutil.Ptr(message)),
+				Schedule: &datadogV2.DowntimeScheduleCreateRequest{
+					DowntimeScheduleOneTimeCreateUpdateRequest: &datadogV2.DowntimeScheduleOneTimeCreateUpdateRequest{
+						End: *datadog.NewNullableTime(extutil.Ptr(state.End)),
+					},
+				},
+				MuteFirstRecoveryNotification: extutil.Ptr(true),
+				NotifyEndTypes:                notifyEndType,
+				Scope:                         "*",
+			},
+		},
 	}
 
 	downtime, resp, err := api.CreateDowntime(ctx, downtimeRequest)
@@ -150,11 +163,11 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 		return nil, extension_kit.ToError(fmt.Sprintf("Failed to create Downtime for monitor %d. Full response: %v", state.MonitorId, resp), err)
 	}
 
-	state.DowntimeId = extutil.Ptr(downtime.GetId())
+	state.DowntimeId = downtime.Data.Id
 
 	return &action_kit_api.StartResult{
 		Messages: &action_kit_api.Messages{
-			action_kit_api.Message{Level: extutil.Ptr(action_kit_api.Info), Message: fmt.Sprintf("Downtime started. (monitor %d, downtime %d)", state.MonitorId, *state.DowntimeId)},
+			action_kit_api.Message{Level: extutil.Ptr(action_kit_api.Info), Message: fmt.Sprintf("Downtime started. (monitor %d, downtime %s)", state.MonitorId, *state.DowntimeId)},
 		},
 	}, nil
 }
@@ -166,12 +179,12 @@ func MonitorDowntimeStop(ctx context.Context, state *MonitorDowntimeState, api M
 
 	resp, err := api.CancelDowntime(ctx, *state.DowntimeId)
 	if err != nil {
-		return nil, extension_kit.ToError(fmt.Sprintf("Failed to cancel Downtime (monitor %d, downtime %d). Full response: %v", state.MonitorId, *state.DowntimeId, resp), err)
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to cancel Downtime (monitor %d, downtime %s). Full response: %v", state.MonitorId, *state.DowntimeId, resp), err)
 	}
 
 	return &action_kit_api.StopResult{
 		Messages: &action_kit_api.Messages{
-			action_kit_api.Message{Level: extutil.Ptr(action_kit_api.Info), Message: fmt.Sprintf("Downtime canceled. (monitor %d, downtime %d)", state.MonitorId, *state.DowntimeId)},
+			action_kit_api.Message{Level: extutil.Ptr(action_kit_api.Info), Message: fmt.Sprintf("Downtime canceled. (monitor %d, downtime %s)", state.MonitorId, *state.DowntimeId)},
 		},
 	}, nil
 }
