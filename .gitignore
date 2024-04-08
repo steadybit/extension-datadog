@@ -8,3 +8,4 @@ extension-datadog.iml
 /gpg.key
 /dist
 /licenses
+/snyk.sarif
