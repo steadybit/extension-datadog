@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.8.6 (Next release)
+## v1.8.6
 
 - Update dependencies
 - Use datadog API V2 for downtime creation
