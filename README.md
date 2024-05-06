@@ -45,7 +45,7 @@ helm upgrade steadybit-extension-datadog \
   --wait \
   --timeout 5m0s \
   --create-namespace \
-  --namespace steadybit-extension \
+  --namespace steadybit-agent \
   --set datadog.apiKey="{{API_KEY}}" \
   --set datadog.applicationKey="{{APPLICATION_KEY}}" \
   --set datadog.siteParameter="{{SITE_PARAMETER}}" \
