@@ -50,7 +50,7 @@ helm upgrade steadybit-extension-datadog \
   --set datadog.applicationKey="{{APPLICATION_KEY}}" \
   --set datadog.siteParameter="{{SITE_PARAMETER}}" \
   --set datadog.siteUrl="{{SITE_URL}}" \
-  steadybit-extension-datadog/steadybit-extension-datadog`
+  steadybit-extension-datadog/steadybit-extension-datadog
 ```
 
 ### Docker
