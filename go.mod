@@ -8,7 +8,7 @@ go 1.22.0
 toolchain go1.22.1
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.26.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.27.0
 	github.com/KimMachineGun/automemlimit v0.6.1
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
