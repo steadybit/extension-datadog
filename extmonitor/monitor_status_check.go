@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/extension-datadog/config"
@@ -262,6 +263,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	completed := now.After(state.End)
 	var checkError *action_kit_api.ActionKitError
 	if len(state.ExpectedStatus) > 0 && monitor.OverallState != nil {
+		log.Debug().Str("monitor", *monitor.Name).Str("status", extutil.ToString(*monitor.OverallState)).Strs("expected", state.ExpectedStatus).Msg("Monitor status")
 		if state.StatusCheckMode == statusCheckModeAllTheTime {
 			if !slices.Contains(state.ExpectedStatus, string(*monitor.OverallState)) {
 				tags := strings.Join(monitor.Tags, ", ")
