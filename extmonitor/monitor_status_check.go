@@ -263,7 +263,7 @@ func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	completed := now.After(state.End)
 	var checkError *action_kit_api.ActionKitError
 	if len(state.ExpectedStatus) > 0 && monitor.OverallState != nil {
-		log.Debug().Str("monitor", *monitor.Name).Str("status", extutil.ToString(*monitor.OverallState)).Strs("expected", state.ExpectedStatus).Msg("Monitor status")
+		log.Debug().Str("monitor", *monitor.Name).Str("status", string(*monitor.OverallState)).Strs("expected", state.ExpectedStatus).Msg("Monitor status")
 		if state.StatusCheckMode == statusCheckModeAllTheTime {
 			if !slices.Contains(state.ExpectedStatus, string(*monitor.OverallState)) {
 				tags := strings.Join(monitor.Tags, ", ")
