@@ -60,7 +60,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 				},
 			}),
 		}),
-		Category:    extutil.Ptr("monitoring"),
+		Technology:  extutil.Ptr("Datadog"),
 		Kind:        action_kit_api.Other,
 		TimeControl: action_kit_api.TimeControlExternal,
 		Parameters: []action_kit_api.ActionParameter{

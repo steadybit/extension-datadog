@@ -63,7 +63,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				},
 			}),
 		}),
-		Category:    extutil.Ptr("monitoring"),
+		Technology:  extutil.Ptr("Datadog"),
 		Kind:        action_kit_api.Check,
 		TimeControl: action_kit_api.TimeControlInternal,
 		Parameters: []action_kit_api.ActionParameter{
