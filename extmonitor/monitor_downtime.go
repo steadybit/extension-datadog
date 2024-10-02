@@ -61,6 +61,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 			}),
 		}),
 		Technology:  extutil.Ptr("Datadog"),
+		Category:    extutil.Ptr("Datadog"), //Can be removed in Q1/24 - support for backward compatibility of old sidebar
 		Kind:        action_kit_api.Other,
 		TimeControl: action_kit_api.TimeControlExternal,
 		Parameters: []action_kit_api.ActionParameter{
