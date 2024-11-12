@@ -40,7 +40,7 @@ func main() {
 	extevents.RegisterEventListenerHandlers()
 
 	action_kit_sdk.RegisterCoverageEndpoints()
-	action_kit_sdk.InstallSignalHandler()
+	extsignals.ActivateSignalHandlers()
 
 	exthealth.SetReady(true)
 	exthttp.Listen(exthttp.ListenOpts{
