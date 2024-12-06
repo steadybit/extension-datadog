@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.9
+
+- Use uid instead of name for user statement in Dockerfil
+- Update dependencies
+
 ## v1.8.8
 
 - Set new `Technology` property in extension description
