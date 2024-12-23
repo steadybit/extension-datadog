@@ -55,7 +55,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 			QuantityRestriction: extutil.Ptr(action_kit_api.All),
 			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
 				{
-					Label: "by monitor name",
+					Label: "monitor name",
 					Query: "datadog.monitor.name=\"\"",
 				},
 			}),
