@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/event-kit/go/event_kit_api"
 	"github.com/steadybit/extension-datadog/config"
@@ -21,11 +22,11 @@ import (
 )
 
 func RegisterEventListenerHandlers() {
-	exthttp.RegisterHttpHandler("/events/experiment-started", handle(onExperimentStarted))
-	exthttp.RegisterHttpHandler("/events/experiment-completed", handle(onExperimentCompleted))
-	exthttp.RegisterHttpHandler("/events/experiment-step-started", handle(onExperimentStepStarted))
-	exthttp.RegisterHttpHandler("/events/experiment-target-started", handle(onExperimentTargetStarted))
-	exthttp.RegisterHttpHandler("/events/experiment-target-completed", handle(onExperimentTargetCompleted))
+	exthttp.RegisterHttpHandlerWithLogLevel("/events/experiment-started", handle(onExperimentStarted), zerolog.DebugLevel)
+	exthttp.RegisterHttpHandlerWithLogLevel("/events/experiment-completed", handle(onExperimentCompleted), zerolog.DebugLevel)
+	exthttp.RegisterHttpHandlerWithLogLevel("/events/experiment-step-started", handle(onExperimentStepStarted), zerolog.DebugLevel)
+	exthttp.RegisterHttpHandlerWithLogLevel("/events/experiment-target-started", handle(onExperimentTargetStarted), zerolog.DebugLevel)
+	exthttp.RegisterHttpHandlerWithLogLevel("/events/experiment-target-completed", handle(onExperimentTargetCompleted), zerolog.DebugLevel)
 }
 
 type SendEventApi interface {
@@ -82,6 +83,7 @@ func onExperimentStarted(event event_kit_api.EventRequestBody) (*datadogV1.Event
 }
 
 func onExperimentCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
+	log.Info().Str("experimentKey", event.ExperimentExecution.ExperimentKey).Float32("executionId", event.ExperimentExecution.ExecutionId).Str("status", string(event.ExperimentExecution.State)).Msg("Received event about ended experiment.")
 	stepExecutions.Range(func(key, value interface{}) bool {
 		stepExecution := value.(event_kit_api.ExperimentStepExecution)
 		if stepExecution.ExecutionId == event.ExperimentExecution.ExecutionId {
