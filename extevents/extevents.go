@@ -150,17 +150,6 @@ func onExperimentTargetStarted(event event_kit_api.EventRequestBody) (*datadogV1
 	return nil, nil
 }
 
-func getActionName(stepExecution event_kit_api.ExperimentStepExecution) string {
-	actionName := *stepExecution.ActionId
-	if stepExecution.ActionName != nil {
-		actionName = *stepExecution.ActionName
-	}
-	if stepExecution.CustomLabel != nil {
-		actionName = *stepExecution.CustomLabel
-	}
-	return actionName
-}
-
 func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
 	if event.ExperimentStepTargetExecution == nil {
 		return nil, errors.New("missing ExperimentStepTargetExecution in event")
@@ -194,6 +183,17 @@ func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadog
 		}, nil
 	}
 	return nil, nil
+}
+
+func getActionName(stepExecution event_kit_api.ExperimentStepExecution) string {
+	actionName := *stepExecution.ActionId
+	if stepExecution.ActionName != nil {
+		actionName = *stepExecution.ActionName
+	}
+	if stepExecution.CustomLabel != nil {
+		actionName = *stepExecution.CustomLabel
+	}
+	return actionName
 }
 
 func getTargetName(target event_kit_api.ExperimentStepTargetExecution) string {
