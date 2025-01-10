@@ -45,7 +45,7 @@ func Test_sendDatadogEvent(t *testing.T) {
 		Tags:           []string{},
 		SourceTypeName: extutil.Ptr("Steadybit"),
 	}
-	sendDatadogEvent(context.Background(), mockedApi, &datadogEventBody)
+	sendDatadogEvent(mockedApi, &datadogEventBody)
 
 	// Then
 	mockedApi.AssertNumberOfCalls(t, "SendEvent", 1)

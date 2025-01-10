@@ -55,7 +55,7 @@ func handle(handler eventHandler) func(w http.ResponseWriter, r *http.Request, b
 
 		if request, err := handler(event); err == nil {
 			if request != nil {
-				sendDatadogEvent(r.Context(), &config.Config, request)
+				go sendDatadogEvent(&config.Config, request)
 			}
 		} else {
 			exthttp.WriteError(w, extension_kit.ToError(err.Error(), err))
@@ -369,8 +369,8 @@ func parseBodyToEventRequestBody(body []byte) (event_kit_api.EventRequestBody, e
 	return event, err
 }
 
-func sendDatadogEvent(ctx context.Context, api SendEventApi, datadogEventBody *datadogV1.EventCreateRequest) {
-	_, r, err := api.SendEvent(ctx, *datadogEventBody)
+func sendDatadogEvent(api SendEventApi, datadogEventBody *datadogV1.EventCreateRequest) {
+	_, r, err := api.SendEvent(context.Background(), *datadogEventBody)
 
 	if err != nil {
 		log.Err(err).Msgf("Failed to send Datadog event. Full response %v",
