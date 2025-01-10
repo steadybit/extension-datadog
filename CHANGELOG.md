@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.10
+
+- Handle event requests asynchronously, to avoid blocking the agent
+- Update dependencies
+
 ## v1.8.9
 
 - Use uid instead of name for user statement in Dockerfil
