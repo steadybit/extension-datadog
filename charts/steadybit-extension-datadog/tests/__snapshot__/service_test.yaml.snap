@@ -6,12 +6,16 @@ manifest should match snapshot with TLS:
       annotations:
         steadybit.com/extension-auto-discovery: |
           {"extensions":[{"port":8090,"protocol":"https","types":["ACTION","DISCOVERY","EVENT"]}]}
+        steadybit.com/extension-auto-registration: |
+          {"extensions":[{"port":8090,"protocol":"https"}]}
       labels: null
       name: RELEASE-NAME-steadybit-extension-datadog
       namespace: NAMESPACE
     spec:
       ports:
-        - port: 8090
+        - appProtocol: tcp
+          name: tcp-app
+          port: 8090
           protocol: TCP
           targetPort: 8090
       selector:
@@ -25,12 +29,16 @@ manifest should match snapshot with mutual TLS:
       annotations:
         steadybit.com/extension-auto-discovery: |
           {"extensions":[{"port":8090,"protocol":"https","types":["ACTION","DISCOVERY","EVENT"]}]}
+        steadybit.com/extension-auto-registration: |
+          {"extensions":[{"port":8090,"protocol":"https"}]}
       labels: null
       name: RELEASE-NAME-steadybit-extension-datadog
       namespace: NAMESPACE
     spec:
       ports:
-        - port: 8090
+        - appProtocol: tcp
+          name: tcp-app
+          port: 8090
           protocol: TCP
           targetPort: 8090
       selector:
@@ -44,12 +52,16 @@ manifest should match snapshot with mutual TLS using containerPaths:
       annotations:
         steadybit.com/extension-auto-discovery: |
           {"extensions":[{"port":8090,"protocol":"https","types":["ACTION","DISCOVERY","EVENT"]}]}
+        steadybit.com/extension-auto-registration: |
+          {"extensions":[{"port":8090,"protocol":"https"}]}
       labels: null
       name: RELEASE-NAME-steadybit-extension-datadog
       namespace: NAMESPACE
     spec:
       ports:
-        - port: 8090
+        - appProtocol: tcp
+          name: tcp-app
+          port: 8090
           protocol: TCP
           targetPort: 8090
       selector:
@@ -63,12 +75,16 @@ manifest should match snapshot without TLS:
       annotations:
         steadybit.com/extension-auto-discovery: |
           {"extensions":[{"port":8090,"protocol":"http","types":["ACTION","DISCOVERY","EVENT"]}]}
+        steadybit.com/extension-auto-registration: |
+          {"extensions":[{"port":8090,"protocol":"http"}]}
       labels: null
       name: RELEASE-NAME-steadybit-extension-datadog
       namespace: NAMESPACE
     spec:
       ports:
-        - port: 8090
+        - appProtocol: tcp
+          name: tcp-app
+          port: 8090
           protocol: TCP
           targetPort: 8090
       selector:
