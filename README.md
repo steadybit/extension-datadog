@@ -98,3 +98,10 @@ This can be set via helm using the extraEnv variable
 --set "extraEnv[0].name=HTTPS_PROXY" \
 --set "extraEnv[0].value=https:\\user:pwd@CompanyProxy.com:8888"
 ```
+
+## Version and Revision
+
+The version and revision of the extension:
+- are printed during the startup of the extension
+- are added as a Docker label to the image
+- are available via the `version.txt`/`revision.txt` files in the root of the image
