@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/rs/zerolog v1.34.0
-	github.com/steadybit/action-kit/go/action_kit_api/v2 v2.9.7
+	github.com/steadybit/action-kit/go/action_kit_api/v2 v2.10.0
 	github.com/steadybit/action-kit/go/action_kit_sdk v1.1.15
 	github.com/steadybit/action-kit/go/action_kit_test v1.3.2
 	github.com/steadybit/discovery-kit/go/discovery_kit_api v1.6.0
@@ -33,7 +33,7 @@ require (
 	github.com/elastic/go-windows v1.0.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/getkin/kin-openapi v0.131.0 // indirect
+	github.com/getkin/kin-openapi v0.132.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
