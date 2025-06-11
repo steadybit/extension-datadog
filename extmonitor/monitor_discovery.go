@@ -52,12 +52,12 @@ func (d *monitorDiscovery) DescribeTarget() discovery_kit_api.TargetDescription 
 		Icon:     extutil.Ptr(monitorIcon),
 		Table: discovery_kit_api.Table{
 			Columns: []discovery_kit_api.Column{
-				{Attribute: "steadybit.label"},
+				{Attribute: "datadog.monitor.name"},
 				{Attribute: "datadog.monitor.tags"},
 			},
 			OrderBy: []discovery_kit_api.OrderBy{
 				{
-					Attribute: "steadybit.label",
+					Attribute: "datadog.monitor.name",
 					Direction: "ASC",
 				},
 			},
@@ -145,7 +145,6 @@ func toTarget(monitor datadogV1.Monitor, siteUrl string) discovery_kit_api.Targe
 	name := *monitor.Name
 
 	attributes := make(map[string][]string)
-	attributes["steadybit.label"] = []string{name}
 	attributes["steadybit.url"] = []string{fmt.Sprintf("%s/monitors/%s", siteUrl, id)}
 	attributes["datadog.monitor.name"] = []string{name}
 	attributes["datadog.monitor.id"] = []string{id}
