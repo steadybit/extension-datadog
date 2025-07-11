@@ -55,7 +55,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 		Icon:        extutil.Ptr(monitorIcon),
 		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
 			TargetType:          monitorTargetId,
-			QuantityRestriction: extutil.Ptr(action_kit_api.All),
+			QuantityRestriction: extutil.Ptr(action_kit_api.QuantityRestrictionAll),
 			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
 				{
 					Label: "monitor name",
@@ -72,7 +72,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Name:         "duration",
 				Label:        "Duration",
 				Description:  extutil.Ptr(""),
-				Type:         action_kit_api.Duration,
+				Type:         action_kit_api.ActionParameterTypeDuration,
 				DefaultValue: extutil.Ptr("30s"),
 				Order:        extutil.Ptr(1),
 				Required:     extutil.Ptr(true),
@@ -81,7 +81,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Name:        "expectedStatus",
 				Label:       "Expected Status",
 				Description: extutil.Ptr(""),
-				Type:        action_kit_api.String,
+				Type:        action_kit_api.ActionParameterTypeString,
 				Options: extutil.Ptr([]action_kit_api.ParameterOption{
 					action_kit_api.ExplicitParameterOption{
 						Label: "Ok",
@@ -121,7 +121,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Name:        "expectedStatusList",
 				Label:       "Expected Status List",
 				Description: extutil.Ptr(""),
-				Type:        action_kit_api.StringArray,
+				Type:        action_kit_api.ActionParameterTypeStringArray,
 				Options: extutil.Ptr([]action_kit_api.ParameterOption{
 					action_kit_api.ExplicitParameterOption{
 						Label: "Ok",
@@ -159,7 +159,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Name:         "statusCheckMode",
 				Label:        "Status Check Mode",
 				Description:  extutil.Ptr("How often should the status be expected?"),
-				Type:         action_kit_api.String,
+				Type:         action_kit_api.ActionParameterTypeString,
 				DefaultValue: extutil.Ptr(statusCheckModeAllTheTime),
 				Options: extutil.Ptr([]action_kit_api.ParameterOption{
 					action_kit_api.ExplicitParameterOption{

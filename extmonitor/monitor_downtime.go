@@ -52,7 +52,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 		Icon:        extutil.Ptr(monitorIcon),
 		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
 			TargetType:          monitorTargetId,
-			QuantityRestriction: extutil.Ptr(action_kit_api.All),
+			QuantityRestriction: extutil.Ptr(action_kit_api.QuantityRestrictionAll),
 			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
 				{
 					Label: "monitor name",
@@ -69,7 +69,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 				Name:         "duration",
 				Label:        "Duration",
 				Description:  extutil.Ptr(""),
-				Type:         action_kit_api.Duration,
+				Type:         action_kit_api.ActionParameterTypeDuration,
 				DefaultValue: extutil.Ptr("30s"),
 				Order:        extutil.Ptr(1),
 				Required:     extutil.Ptr(true),
@@ -78,7 +78,7 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 				Name:         "notify",
 				Label:        "Notify after Downtime if unhealthy",
 				Description:  extutil.Ptr("Should datadog notify after the Downtime if the monitor is in an unhealthy state?"),
-				Type:         action_kit_api.Boolean,
+				Type:         action_kit_api.ActionParameterTypeBoolean,
 				DefaultValue: extutil.Ptr("true"),
 				Order:        extutil.Ptr(2),
 				Required:     extutil.Ptr(true),
