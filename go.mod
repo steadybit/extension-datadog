@@ -6,7 +6,7 @@ module github.com/steadybit/extension-datadog
 go 1.24.0
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.42.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.43.0
 	github.com/KimMachineGun/automemlimit v0.7.4
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
