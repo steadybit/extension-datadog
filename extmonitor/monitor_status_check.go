@@ -1,11 +1,15 @@
-// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2022 Steadybit GmbH
+// Copyright 2025 steadybit GmbH. All rights reserved.
 
 package extmonitor
 
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
@@ -15,10 +19,6 @@ import (
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
 	"golang.org/x/exp/slices"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type MonitorStatusCheckAction struct{}
@@ -247,18 +247,27 @@ func (m *MonitorStatusCheckAction) Start(_ context.Context, _ *MonitorStatusChec
 }
 
 func (m *MonitorStatusCheckAction) Status(ctx context.Context, state *MonitorStatusCheckState) (*action_kit_api.StatusResult, error) {
-	return MonitorStatusCheckStatus(ctx, state, &config.Config, config.Config.SiteUrl)
+	return monitorStatusCheckStatus(ctx, state, &config.Config, config.Config.SiteUrl)
 }
 
 type GetMonitorApi interface {
 	GetMonitor(ctx context.Context, monitorId int64, params datadogV1.GetMonitorOptionalParameters) (datadogV1.Monitor, *http.Response, error)
 }
 
-func MonitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckState, api GetMonitorApi, siteUrl string) (*action_kit_api.StatusResult, error) {
+func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckState, api GetMonitorApi, siteUrl string) (*action_kit_api.StatusResult, error) {
 	now := time.Now()
-	monitor, resp, err := api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters())
+
+	var monitor datadogV1.Monitor
+	var resp *http.Response
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		monitor, resp, err = api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters())
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
-		return nil, extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog. Full response: %v", state.MonitorId, resp), err)
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog after 3 attempts. Full response: %v", state.MonitorId, resp), err)
 	}
 
 	completed := now.After(state.End)

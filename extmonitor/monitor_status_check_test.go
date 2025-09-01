@@ -1,19 +1,20 @@
-// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2022 Steadybit GmbH
+// Copyright 2025 steadybit GmbH. All rights reserved.
 
 package extmonitor
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
-	"time"
 )
 
 type datadogGetMonitorClientMock struct {
@@ -177,7 +178,7 @@ func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 
 	// When
-	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, result)
@@ -203,7 +204,7 @@ func TestAllTheTimeSuccess(t *testing.T) {
 	state.StatusCheckMode = statusCheckModeAllTheTime
 
 	// When
-	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "https://example.com")
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "https://example.com")
 
 	// Then
 	require.Nil(t, result.State)
@@ -232,7 +233,7 @@ func TestAllTheTimeExpectationMismatch(t *testing.T) {
 	state.StatusCheckMode = statusCheckModeAllTheTime
 
 	// When
-	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, err)
@@ -270,7 +271,7 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	state.StatusCheckMode = statusCheckModeAtLeastOnce
 
 	// When
-	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, err)
@@ -298,7 +299,7 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	}), nil).Once()
 
 	// When
-	result, err = MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+	result, err = monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, err)
@@ -322,7 +323,7 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	state.End = time.Now().Add(time.Minute * -1) //Simulate that the time has passed
 
 	// When
-	result, err = MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+	result, err = monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, err)
@@ -351,7 +352,7 @@ func TestAtLeastOnceExpectationMismatch(t *testing.T) {
 	state.StatusCheckMode = statusCheckModeAtLeastOnce
 
 	// When
-	result, err := MonitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
 
 	// Then
 	require.Nil(t, err)
@@ -365,6 +366,36 @@ func TestAtLeastOnceExpectationMismatch(t *testing.T) {
 	require.Equal(t, "gateway pods ready", metric.Metric["datadog.monitor.name"])
 	require.NotNil(t, metric.Timestamp)
 	require.Equal(t, float64(0), metric.Value)
+}
+
+func Test_Should_Retry_On_Error(t *testing.T) {
+	// Given
+	mockedApi := new(datadogGetMonitorClientMock)
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).
+		Return(datadogV1.Monitor{}, extutil.Ptr(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error")).Once().
+		Return(datadogV1.Monitor{}, extutil.Ptr(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error")).Once().
+		Return(datadogV1.Monitor{
+			Name:         extutil.Ptr("gateway pods ready"),
+			Id:           extutil.Ptr(int64(1234)),
+			OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
+		},
+			extutil.Ptr(http.Response{StatusCode: 200}),
+			nil).Once()
+
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * -1) //Simulate that the time has passed
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
+	state.StatusCheckMode = statusCheckModeAtLeastOnce
+
+	// When
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+
+	// Then
+	require.Nil(t, err)
+	require.Nil(t, result.State)
+	require.True(t, result.Completed)
 }
 
 func TestCreateMetric(t *testing.T) {
