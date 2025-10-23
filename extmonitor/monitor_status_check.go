@@ -421,9 +421,12 @@ func toMetric(monitorId *int64, monitorName *string, states []string, now time.T
 		}
 	}
 
-	queryFilter := ""
+	filterQuery := ""
+	filterName := ""
+	filterId := ""
 	if len(filter) > 0 {
-		queryFilter = queryFilter + "&q="
+		filterQuery = filterQuery + "&q="
+		filterName = filterName + " with filter "
 		isFirst := true
 		filterKeys := make([]string, 0, len(filter))
 		for key := range filter {
@@ -435,9 +438,12 @@ func toMetric(monitorId *int64, monitorName *string, states []string, now time.T
 		// iterate by sorted keys
 		for _, filterKey := range filterKeys {
 			if !isFirst {
-				queryFilter = queryFilter + "%20AND%20"
+				filterQuery = filterQuery + "%20AND%20"
+				filterName = filterName + ", "
 			}
-			queryFilter = queryFilter + filterKey + "%3A" + filter[filterKey]
+			filterQuery = filterQuery + filterKey + "%3A" + filter[filterKey]
+			filterName = filterName + filterKey + ":" + filter[filterKey]
+			filterId = filterId + filterKey + ":" + filter[filterKey] + ";"
 			isFirst = false
 		}
 	}
@@ -446,11 +452,11 @@ func toMetric(monitorId *int64, monitorName *string, states []string, now time.T
 	return extutil.Ptr(action_kit_api.Metric{
 		Name: extutil.Ptr("datadog_monitor_status"),
 		Metric: map[string]string{
-			"datadog.monitor.id":   monitorIdString,
-			"datadog.monitor.name": *monitorName,
+			"datadog.monitor.id":   monitorIdString + filterId,
+			"datadog.monitor.name": *monitorName + filterName,
 			"state":                state,
 			"tooltip":              tooltip,
-			"url":                  fmt.Sprintf("%s/monitors/%s?from_ts=%d&to_ts=%d%s", siteUrl, monitorIdString, start.UnixMilli(), end.UnixMilli(), queryFilter),
+			"url":                  fmt.Sprintf("%s/monitors/%s?from_ts=%d&to_ts=%d%s", siteUrl, monitorIdString, start.UnixMilli(), end.UnixMilli(), filterQuery),
 		},
 		Timestamp: now,
 		Value:     0,

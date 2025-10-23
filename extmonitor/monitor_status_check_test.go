@@ -366,8 +366,8 @@ func TestAllTheTimeExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
 	metric := (*result.Metrics)[0]
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
-	require.Equal(t, "1234", metric.Metric["datadog.monitor.id"])
-	require.Equal(t, "gateway pods ready", metric.Metric["datadog.monitor.name"])
+	require.Equal(t, "1234namespace:default;", metric.Metric["datadog.monitor.id"])
+	require.Equal(t, "gateway pods ready with filter namespace:default", metric.Metric["datadog.monitor.name"])
 	require.NotNil(t, metric.Timestamp)
 	require.Equal(t, float64(0), metric.Value)
 }
@@ -502,8 +502,8 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 	require.Nil(t, result.Error)
 	metric := (*result.Metrics)[0]
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
-	require.Equal(t, "1234", metric.Metric["datadog.monitor.id"])
-	require.Equal(t, "gateway pods ready", metric.Metric["datadog.monitor.name"])
+	require.Equal(t, "1234namespace:default;", metric.Metric["datadog.monitor.id"])
+	require.Equal(t, "gateway pods ready with filter namespace:default", metric.Metric["datadog.monitor.name"])
 	require.NotNil(t, metric.Timestamp)
 	require.Equal(t, float64(0), metric.Value)
 
@@ -657,8 +657,8 @@ func TestAtLeastOnceExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
 	metric := (*result.Metrics)[0]
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
-	require.Equal(t, "1234", metric.Metric["datadog.monitor.id"])
-	require.Equal(t, "gateway pods ready", metric.Metric["datadog.monitor.name"])
+	require.Equal(t, "1234namespace:default;", metric.Metric["datadog.monitor.id"])
+	require.Equal(t, "gateway pods ready with filter namespace:default", metric.Metric["datadog.monitor.name"])
 	require.NotNil(t, metric.Timestamp)
 	require.Equal(t, float64(0), metric.Value)
 }
