@@ -6,13 +6,14 @@ package extmonitor
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
 )
 
 type datadogClientMock struct {
@@ -35,16 +36,18 @@ func TestIterateThroughMonitorsResponses(t *testing.T) {
 	mockedApi := new(datadogClientMock)
 	page1 := []datadogV1.Monitor{
 		{
-			Id:   extutil.Ptr(int64(42)),
-			Name: extutil.Ptr("Test-42"),
-			Tags: []string{"tagA", "tagB"},
+			Id:    extutil.Ptr(int64(42)),
+			Name:  extutil.Ptr("Test-42"),
+			Tags:  []string{"tagA", "tagB"},
+			Multi: extutil.Ptr(false),
 		},
 	}
 	page2 := []datadogV1.Monitor{
 		{
-			Id:   extutil.Ptr(int64(69)),
-			Name: extutil.Ptr("Test-69"),
-			Tags: []string{"tagB", "tagC"},
+			Id:    extutil.Ptr(int64(69)),
+			Name:  extutil.Ptr("Test-69"),
+			Tags:  []string{"tagB", "tagC"},
+			Multi: extutil.Ptr(true),
 		},
 	}
 	page3 := []datadogV1.Monitor{}
@@ -63,10 +66,12 @@ func TestIterateThroughMonitorsResponses(t *testing.T) {
 	require.Equal(t, "42", monitors[0].Id)
 	require.Equal(t, "Test-42", monitors[0].Label)
 	require.Equal(t, []string{"tagA", "tagB"}, monitors[0].Attributes["datadog.monitor.tags"])
+	require.Equal(t, []string{"false"}, monitors[0].Attributes["datadog.monitor.multi-alert"])
 	require.Equal(t, []string{"https://app.datadoghq.eu/monitors/42"}, monitors[0].Attributes["steadybit.url"])
 	require.Equal(t, "69", monitors[1].Id)
 	require.Equal(t, "Test-69", monitors[1].Label)
 	require.Equal(t, []string{"tagB", "tagC"}, monitors[1].Attributes["datadog.monitor.tags"])
+	require.Equal(t, []string{"true"}, monitors[1].Attributes["datadog.monitor.multi-alert"])
 	mockedApi.AssertNumberOfCalls(t, "ListMonitors", 3)
 }
 
@@ -75,9 +80,10 @@ func TestErrorResponseReturnsIntermediateResult(t *testing.T) {
 	mockedApi := new(datadogClientMock)
 	page1 := []datadogV1.Monitor{
 		{
-			Id:   extutil.Ptr(int64(42)),
-			Name: extutil.Ptr("Test-42"),
-			Tags: []string{"tagA", "tagB"},
+			Id:    extutil.Ptr(int64(42)),
+			Name:  extutil.Ptr("Test-42"),
+			Tags:  []string{"tagA", "tagB"},
+			Multi: extutil.Ptr(true),
 		},
 	}
 	okResponse := http.Response{
@@ -102,9 +108,10 @@ func TestExlcudeAttributes(t *testing.T) {
 	mockedApi := new(datadogClientMock)
 	page1 := []datadogV1.Monitor{
 		{
-			Id:   extutil.Ptr(int64(42)),
-			Name: extutil.Ptr("Test-42"),
-			Tags: []string{"tagA", "tagB"},
+			Id:    extutil.Ptr(int64(42)),
+			Name:  extutil.Ptr("Test-42"),
+			Tags:  []string{"tagA", "tagB"},
+			Multi: extutil.Ptr(true),
 		},
 	}
 	page2 := []datadogV1.Monitor{}

@@ -6,6 +6,10 @@ package extmonitor
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
@@ -14,9 +18,6 @@ import (
 	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type monitorDiscovery struct {
@@ -149,6 +150,11 @@ func toTarget(monitor datadogV1.Monitor, siteUrl string) discovery_kit_api.Targe
 	attributes["datadog.monitor.name"] = []string{name}
 	attributes["datadog.monitor.id"] = []string{id}
 	attributes["datadog.monitor.tags"] = monitor.Tags
+	if monitor.Multi != nil {
+		attributes["datadog.monitor.multi-alert"] = []string{fmt.Sprintf("%t", *monitor.Multi)}
+	} else {
+		attributes["datadog.monitor.multi-alert"] = []string{"false"}
+	}
 
 	return discovery_kit_api.Target{
 		Id:         id,

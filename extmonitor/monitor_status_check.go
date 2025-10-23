@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ type MonitorStatusCheckState struct {
 	ExpectedStatus     []string
 	StatusCheckMode    string
 	StatusCheckSuccess bool
+	MultiAlertFilter   map[string]string `json:"multiAlertFilter"`
 }
 
 func NewMonitorStatusCheckAction() action_kit_sdk.Action[MonitorStatusCheckState] {
@@ -174,6 +176,15 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Required: extutil.Ptr(true),
 				Order:    extutil.Ptr(4),
 			},
+			{
+				Name:        "multiAlertFilter",
+				Label:       "Multi Alert Filter",
+				Description: extutil.Ptr("Filter to only consider alerts for specific groups of a multi alert."),
+				Type:        action_kit_api.ActionParameterTypeKeyValue,
+				Required:    extutil.Ptr(false),
+				Advanced:    extutil.Ptr(true),
+				Order:       extutil.Ptr(5),
+			},
 		},
 		Widgets: extutil.Ptr([]action_kit_api.Widget{
 			action_kit_api.StateOverTimeWidget{
@@ -227,6 +238,17 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	if request.Config["statusCheckMode"] != nil {
 		statusCheckMode = fmt.Sprintf("%v", request.Config["statusCheckMode"])
 	}
+	if (request.Config["multiAlertFilter"]) != nil {
+		multiAlertFilter, err := extutil.ToKeyValue(request.Config, "multiAlertFilter")
+		if err != nil {
+			return nil, err
+		}
+		state.MultiAlertFilter = multiAlertFilter
+	}
+	isMultiAlert := extutil.ToBool(extutil.MustHaveValue(request.Target.Attributes, "datadog.monitor.multi-alert")[0])
+	if len(state.MultiAlertFilter) > 0 && !isMultiAlert {
+		return nil, extension_kit.ToError("Multi Alert Filter can only be used for monitors having a multi alert.", nil)
+	}
 
 	parsedMonitorId, err := strconv.ParseInt(monitorId[0], 10, 64)
 	if err != nil {
@@ -257,11 +279,17 @@ type GetMonitorApi interface {
 func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckState, api GetMonitorApi, siteUrl string) (*action_kit_api.StatusResult, error) {
 	now := time.Now()
 
+	useMultiAlertFilter := len(state.MultiAlertFilter) > 0
+
 	var monitor datadogV1.Monitor
 	var resp *http.Response
 	var err error
 	for attempt := 0; attempt < 3; attempt++ {
-		monitor, resp, err = api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters())
+		if useMultiAlertFilter {
+			monitor, resp, err = api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters().WithGroupStates("all"))
+		} else {
+			monitor, resp, err = api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters())
+		}
 		if err == nil {
 			break
 		}
@@ -272,10 +300,11 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 
 	completed := now.After(state.End)
 	var checkError *action_kit_api.ActionKitError
-	if len(state.ExpectedStatus) > 0 && monitor.OverallState != nil {
-		log.Debug().Str("monitor", *monitor.Name).Str("status", string(*monitor.OverallState)).Strs("expected", state.ExpectedStatus).Msg("Monitor status")
+	monitorStates := getMonitorStates(&monitor, state)
+	if len(state.ExpectedStatus) > 0 && len(monitorStates) > 0 {
+		log.Debug().Str("monitor", *monitor.Name).Strs("status", monitorStates).Strs("expected", state.ExpectedStatus).Msg("Monitor status")
 		if state.StatusCheckMode == statusCheckModeAllTheTime {
-			if !slices.Contains(state.ExpectedStatus, string(*monitor.OverallState)) {
+			if !containsOnly(monitorStates, state.ExpectedStatus) {
 				tags := strings.Join(monitor.Tags, ", ")
 				if len(tags) == 0 {
 					tags = "<none>"
@@ -285,13 +314,13 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 						*monitor.Name,
 						state.MonitorId,
 						tags,
-						*monitor.OverallState,
-						state.ExpectedStatus),
+						strings.Join(monitorStates, ", "),
+						strings.Join(state.ExpectedStatus, ", ")),
 					Status: extutil.Ptr(action_kit_api.Failed),
 				})
 			}
 		} else if state.StatusCheckMode == statusCheckModeAtLeastOnce {
-			if slices.Contains(state.ExpectedStatus, string(*monitor.OverallState)) {
+			if containsOnly(monitorStates, state.ExpectedStatus) {
 				state.StatusCheckSuccess = true
 			}
 			if completed && !state.StatusCheckSuccess {
@@ -312,7 +341,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	}
 
 	metrics := []action_kit_api.Metric{
-		*toMetric(&monitor, now, state.Start, state.End, siteUrl),
+		*toMetric(monitor.Id, monitor.Name, monitorStates, now, state.Start, state.End, siteUrl, state.MultiAlertFilter),
 	}
 
 	return &action_kit_api.StatusResult{
@@ -322,42 +351,106 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	}, nil
 }
 
-func toMetric(monitor *datadogV1.Monitor, now time.Time, start time.Time, end time.Time, siteUrl string) *action_kit_api.Metric {
+func containsOnly(states []string, expectedStates []string) bool {
+	for _, state := range states {
+		if !slices.Contains(expectedStates, state) {
+			return false
+		}
+	}
+	return true
+}
+
+func getMonitorStates(monitor *datadogV1.Monitor, state *MonitorStatusCheckState) []string {
+	useMultiAlertFilter := len(state.MultiAlertFilter) > 0
+	if useMultiAlertFilter {
+		//multi alert filter - return states of matching groups
+		states := map[datadogV1.MonitorOverallStates]bool{}
+		if monitor.State != nil && monitor.State.HasGroups() {
+			for groupName, groupState := range monitor.State.Groups {
+				matchesFilter := true
+				for key, value := range state.MultiAlertFilter {
+					tagToMatch := fmt.Sprintf("%s:%s", key, value)
+					if !strings.Contains(groupName, tagToMatch) {
+						matchesFilter = false
+						break
+					}
+				}
+				if matchesFilter {
+					states[*groupState.Status] = true
+				}
+			}
+			//return distinct states
+			keys := make([]string, 0, len(states))
+			for singleState := range states {
+				keys = append(keys, string(singleState))
+			}
+			return keys
+		}
+	} else {
+		//no multi alert filter - return overall state
+		if monitor.OverallState != nil {
+			return []string{string(*monitor.OverallState)}
+		}
+	}
+	return []string{}
+}
+
+func toMetric(monitorId *int64, monitorName *string, states []string, now time.Time, start time.Time, end time.Time, siteUrl string, filter map[string]string) *action_kit_api.Metric {
 	var tooltip string
 	var state string
 
-	if monitor.OverallState == nil || *monitor.OverallState == datadogV1.MONITOROVERALLSTATES_UNKNOWN {
+	if len(states) == 0 {
 		state = "warn"
 		tooltip = "Monitor status is: Unknown"
 	} else {
-		tooltip = fmt.Sprintf("Monitor status is: %s", *monitor.OverallState)
-		switch *monitor.OverallState {
-		case datadogV1.MONITOROVERALLSTATES_ALERT:
+		if len(states) == 1 {
+			tooltip = fmt.Sprintf("Monitor status is: %s", states[0])
+		} else {
+			tooltip = fmt.Sprintf("Monitor multi alert group status are: %s", strings.Join(states, ", "))
+		}
+		if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_ALERT)) {
 			state = "danger"
-		case datadogV1.MONITOROVERALLSTATES_IGNORED:
+		} else if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_WARN)) {
 			state = "warn"
-		case datadogV1.MONITOROVERALLSTATES_NO_DATA:
-			state = "info"
-		case datadogV1.MONITOROVERALLSTATES_OK:
-			state = "success"
-		case datadogV1.MONITOROVERALLSTATES_SKIPPED:
-			state = "info"
-		case datadogV1.MONITOROVERALLSTATES_WARN:
+		} else if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_IGNORED)) {
 			state = "warn"
-		default:
-			state = "danger"
+		} else if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_NO_DATA)) {
+			state = "info"
+		} else if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_SKIPPED)) {
+			state = "info"
 		}
 	}
 
-	monitorId := strconv.FormatInt(*monitor.Id, 10)
+	queryFilter := ""
+	if len(filter) > 0 {
+		queryFilter = queryFilter + "&q="
+		isFirst := true
+		filterKeys := make([]string, 0, len(filter))
+		for key := range filter {
+			filterKeys = append(filterKeys, key)
+		}
+		// sort the slice by keys
+		sort.Strings(filterKeys)
+
+		// iterate by sorted keys
+		for _, filterKey := range filterKeys {
+			if !isFirst {
+				queryFilter = queryFilter + "%20AND%20"
+			}
+			queryFilter = queryFilter + filterKey + "%3A" + filter[filterKey]
+			isFirst = false
+		}
+	}
+
+	monitorIdString := strconv.FormatInt(*monitorId, 10)
 	return extutil.Ptr(action_kit_api.Metric{
 		Name: extutil.Ptr("datadog_monitor_status"),
 		Metric: map[string]string{
-			"datadog.monitor.id":   monitorId,
-			"datadog.monitor.name": *monitor.Name,
+			"datadog.monitor.id":   monitorIdString,
+			"datadog.monitor.name": *monitorName,
 			"state":                state,
 			"tooltip":              tooltip,
-			"url":                  fmt.Sprintf("%s/monitors/%s?from_ts=%d&to_ts=%d", siteUrl, monitorId, start.UnixMilli(), end.UnixMilli()),
+			"url":                  fmt.Sprintf("%s/monitors/%s?from_ts=%d&to_ts=%d%s", siteUrl, monitorIdString, start.UnixMilli(), end.UnixMilli(), queryFilter),
 		},
 		Timestamp: now,
 		Value:     0,

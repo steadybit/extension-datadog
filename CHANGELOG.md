@@ -3,6 +3,7 @@
 ## v1.8.11 (next)
 
 - Updated dependencies
+- Added an option to filter a multi alert monitor
 
 ## v1.8.10
 
