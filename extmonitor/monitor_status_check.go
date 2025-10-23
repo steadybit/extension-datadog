@@ -408,6 +408,7 @@ func toMetric(monitorId *int64, monitorName *string, states []string, now time.T
 		} else {
 			tooltip = fmt.Sprintf("Monitor multi alert group status are: %s", strings.Join(states, ", "))
 		}
+		state = "success"
 		if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_ALERT)) {
 			state = "danger"
 		} else if slices.Contains(states, string(datadogV1.MONITOROVERALLSTATES_WARN)) {

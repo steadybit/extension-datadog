@@ -714,6 +714,27 @@ func TestCreateMetric(t *testing.T) {
 	require.Equal(t, "https://app.datadoghq.eu/monitors/42?from_ts=1688475600000&to_ts=1688476200000", metric.Metric["url"])
 }
 
+func TestCreateMetricOk(t *testing.T) {
+	// Given
+	now := time.Now()
+	siteUrl := "https://app.datadoghq.eu"
+
+	// When
+	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
+	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
+	metric := toMetric(extutil.Ptr(int64(42)), extutil.Ptr("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_OK)}, now, start, end, siteUrl, nil)
+
+	// Then
+	require.Equal(t, "datadog_monitor_status", *metric.Name)
+	require.Equal(t, float64(0), metric.Value)
+	require.Equal(t, now, metric.Timestamp)
+	require.Equal(t, "42", metric.Metric["datadog.monitor.id"])
+	require.Equal(t, "gateway readiness", metric.Metric["datadog.monitor.name"])
+	require.Equal(t, "success", metric.Metric["state"])
+	require.Equal(t, "Monitor status is: OK", metric.Metric["tooltip"])
+	require.Equal(t, "https://app.datadoghq.eu/monitors/42?from_ts=1688475600000&to_ts=1688476200000", metric.Metric["url"])
+}
+
 func TestCreateMetricForUnknownState(t *testing.T) {
 	// Given
 	now := time.Now()
