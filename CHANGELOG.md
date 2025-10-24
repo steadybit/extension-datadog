@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.8.11 (next)
+## v1.8.11
 
 - Updated dependencies
 - Added an option to filter a multi alert monitor
