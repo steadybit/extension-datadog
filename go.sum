@@ -175,8 +175,8 @@ github.com/steadybit/discovery-kit/go/discovery_kit_sdk v1.3.1 h1:Di/Gv6Wp+E2FBf
 github.com/steadybit/discovery-kit/go/discovery_kit_sdk v1.3.1/go.mod h1:z7Ma15GaX/UZMTUx/Uulwiz6k+2PwVqou6zP8TKW/Vw=
 github.com/steadybit/discovery-kit/go/discovery_kit_test v1.2.0 h1:Pdgl5y0/MkwRqgXVWeHYYlQucTZ6BEAAAZmvgO+jzh4=
 github.com/steadybit/discovery-kit/go/discovery_kit_test v1.2.0/go.mod h1:2Ox3Se50dEoG0kSuDhTvlLEWeBvtRmSly/OZCmtDiJk=
-github.com/steadybit/event-kit/go/event_kit_api v1.6.0 h1:MZbVVLOPQn46enR3RjWglgWfGR5Eq/18BAex3bH8OQw=
-github.com/steadybit/event-kit/go/event_kit_api v1.6.0/go.mod h1:XKfKcyouAOPW3TVr4sT253kJI9rYlzfy5yER1r7p8VU=
+github.com/steadybit/event-kit/go/event_kit_api v1.6.1 h1:4rqUiirlR+Cb1Q9aoTbx7cKWuO+eERPIY1SqN56CmEE=
+github.com/steadybit/event-kit/go/event_kit_api v1.6.1/go.mod h1:tmfhjInJft/aCU7HJF1SIx2kNCHMNz8pCvn5kB47+/8=
 github.com/steadybit/extension-kit v1.10.0 h1:sOeMsGwYT+9v+U+tzUxy6xLMEH2h2qVw3uzgTWhnNpk=
 github.com/steadybit/extension-kit v1.10.0/go.mod h1:Ow1kVKhBQwLGOrBRPSdGDDVdVBgaMDFjpxPV3FeoHho=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
