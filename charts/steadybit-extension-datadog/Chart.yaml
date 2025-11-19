@@ -1,8 +1,8 @@
 apiVersion: v2
 name: steadybit-extension-datadog
 description: Steadybit Kubernetes extension Helm chart for Datadog.
-version: 1.5.12
-appVersion: v1.8.11
+version: 1.5.13
+appVersion: v1.8.12
 home: https://www.steadybit.com/
 icon: https://steadybit-website-assets.s3.amazonaws.com/logo-symbol-transparent.png
 maintainers:
