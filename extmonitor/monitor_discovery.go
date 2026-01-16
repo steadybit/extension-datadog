@@ -47,7 +47,7 @@ func (d *monitorDiscovery) Describe() discovery_kit_api.DiscoveryDescription {
 func (d *monitorDiscovery) DescribeTarget() discovery_kit_api.TargetDescription {
 	return discovery_kit_api.TargetDescription{
 		Id:       monitorTargetId,
-		Label:    discovery_kit_api.PluralLabel{One: "Datadog monitor", Other: "Datadog monitors"},
+		Label:    discovery_kit_api.PluralLabel{One: "Datadog Monitor", Other: "Datadog Monitors"},
 		Category: extutil.Ptr("monitoring"),
 		Version:  extbuild.GetSemverVersionStringOrUnknown(),
 		Icon:     extutil.Ptr(monitorIcon),
