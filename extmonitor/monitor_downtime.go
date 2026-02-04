@@ -6,6 +6,10 @@ package extmonitor
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
@@ -14,9 +18,6 @@ import (
 	extension_kit "github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type MonitorDowntimeAction struct{}
@@ -60,8 +61,8 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 				},
 			}),
 		}),
-		Technology:  extutil.Ptr("Datadog"),
-		Category:    extutil.Ptr("Datadog"), //Can be removed in Q1/24 - support for backward compatibility of old sidebar
+		Technology: extutil.Ptr("Datadog"),
+
 		Kind:        action_kit_api.Other,
 		TimeControl: action_kit_api.TimeControlExternal,
 		Parameters: []action_kit_api.ActionParameter{
