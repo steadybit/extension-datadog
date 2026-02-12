@@ -9,3 +9,5 @@ extension-datadog.iml
 /dist
 /licenses
 /snyk.sarif
+
+.env
