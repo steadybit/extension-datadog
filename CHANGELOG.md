@@ -1,5 +1,9 @@
 # Changelog
 
+## (next)
+
+- Support if-none-match for the extension list endpoint
+
 ## v1.8.16
 
 - feat(chart): split image.name into image.registry + image.name
