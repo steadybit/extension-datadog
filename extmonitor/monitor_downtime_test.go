@@ -29,18 +29,18 @@ func (m *datadogDowntimeClientMock) CancelDowntime(ctx context.Context, downtime
 func TestMonitorDowntimePrepareExtractsState(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration": 1000 * 60,
 			"notify":   true,
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id": {"12349876"},
 			},
 		}),
-		ExecutionContext: extutil.Ptr(action_kit_api.ExecutionContext{
-			ExperimentUri: extutil.Ptr("<uri-to-experiment>"),
-			ExecutionUri:  extutil.Ptr("<uri-to-execution>"),
+		ExecutionContext: new(action_kit_api.ExecutionContext{
+			ExperimentUri: new("<uri-to-experiment>"),
+			ExecutionUri:  new("<uri-to-execution>"),
 		}),
 	})
 	action := MonitorDowntimeAction{}
@@ -64,9 +64,9 @@ func TestMonitorDowntimeStartSuccess(t *testing.T) {
 	mockedApi := new(datadogDowntimeClientMock)
 	mockedApi.On("CreateDowntime", mock.Anything, mock.Anything, mock.Anything).Return(datadogV2.DowntimeResponse{
 		Data: &datadogV2.DowntimeResponseData{
-			Id: extutil.Ptr("4711"),
+			Id: new("4711"),
 		},
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -75,8 +75,8 @@ func TestMonitorDowntimeStartSuccess(t *testing.T) {
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute)
 	state.Notify = true
-	state.ExecutionUri = extutil.Ptr("<uri-to-execution>")
-	state.ExperimentUri = extutil.Ptr("<uri-to-experiment>")
+	state.ExecutionUri = new("<uri-to-execution>")
+	state.ExperimentUri = new("<uri-to-experiment>")
 
 	// When
 	result, err := MonitorDowntimeStart(context.Background(), &state, mockedApi)
@@ -91,7 +91,7 @@ func TestMonitorDowntimeStartSuccess(t *testing.T) {
 func TestMonitorDowntimeStopSuccess(t *testing.T) {
 	// Given
 	mockedApi := new(datadogDowntimeClientMock)
-	mockedApi.On("CancelDowntime", mock.Anything, mock.Anything, mock.Anything).Return(extutil.Ptr(http.Response{
+	mockedApi.On("CancelDowntime", mock.Anything, mock.Anything, mock.Anything).Return(new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -100,7 +100,7 @@ func TestMonitorDowntimeStopSuccess(t *testing.T) {
 	state.MonitorId = 1234
 	state.End = time.Now().Add(time.Minute)
 	state.Notify = true
-	state.DowntimeId = extutil.Ptr("4711")
+	state.DowntimeId = new("4711")
 
 	// When
 	result, err := MonitorDowntimeStop(context.Background(), &state, mockedApi)

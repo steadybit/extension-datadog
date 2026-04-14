@@ -11,7 +11,6 @@ import (
 
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
 	"github.com/steadybit/extension-datadog/config"
-	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +24,7 @@ func (m *datadogClientMock) ListMonitors(ctx context.Context, params datadogV1.L
 	return args.Get(0).([]datadogV1.Monitor), args.Get(1).(*http.Response), args.Error(2)
 }
 
-func getPageMatcher(page int) interface{} {
+func getPageMatcher(page int) any {
 	return mock.MatchedBy(func(params datadogV1.ListMonitorsOptionalParameters) bool {
 		return *params.Page == int64(page)
 	})
@@ -36,18 +35,18 @@ func TestIterateThroughMonitorsResponses(t *testing.T) {
 	mockedApi := new(datadogClientMock)
 	page1 := []datadogV1.Monitor{
 		{
-			Id:    extutil.Ptr(int64(42)),
-			Name:  extutil.Ptr("Test-42"),
+			Id:    new(int64(42)),
+			Name:  new("Test-42"),
 			Tags:  []string{"tagA", "tagB"},
-			Multi: extutil.Ptr(false),
+			Multi: new(false),
 		},
 	}
 	page2 := []datadogV1.Monitor{
 		{
-			Id:    extutil.Ptr(int64(69)),
-			Name:  extutil.Ptr("Test-69"),
+			Id:    new(int64(69)),
+			Name:  new("Test-69"),
 			Tags:  []string{"tagB", "tagC"},
-			Multi: extutil.Ptr(true),
+			Multi: new(true),
 		},
 	}
 	page3 := []datadogV1.Monitor{}
@@ -80,10 +79,10 @@ func TestErrorResponseReturnsIntermediateResult(t *testing.T) {
 	mockedApi := new(datadogClientMock)
 	page1 := []datadogV1.Monitor{
 		{
-			Id:    extutil.Ptr(int64(42)),
-			Name:  extutil.Ptr("Test-42"),
+			Id:    new(int64(42)),
+			Name:  new("Test-42"),
 			Tags:  []string{"tagA", "tagB"},
-			Multi: extutil.Ptr(true),
+			Multi: new(true),
 		},
 	}
 	okResponse := http.Response{
@@ -108,10 +107,10 @@ func TestExlcudeAttributes(t *testing.T) {
 	mockedApi := new(datadogClientMock)
 	page1 := []datadogV1.Monitor{
 		{
-			Id:    extutil.Ptr(int64(42)),
-			Name:  extutil.Ptr("Test-42"),
+			Id:    new(int64(42)),
+			Name:  new("Test-42"),
 			Tags:  []string{"tagA", "tagB"},
-			Multi: extutil.Ptr(true),
+			Multi: new(true),
 		},
 	}
 	page2 := []datadogV1.Monitor{}

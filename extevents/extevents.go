@@ -15,7 +15,6 @@ import (
 	"github.com/steadybit/extension-datadog/config"
 	extension_kit "github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/exthttp"
-	"github.com/steadybit/extension-kit/extutil"
 	"net/http"
 	"sync"
 	"time"
@@ -76,15 +75,15 @@ func onExperimentStarted(event event_kit_api.EventRequestBody) (*datadogV1.Event
 			event.ExperimentExecution.Name,
 			event.ExperimentExecution.ExecutionId),
 		Tags:           tags,
-		SourceTypeName: extutil.Ptr("Steadybit"),
-		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
-		DateHappened:   extutil.Ptr(event.EventTime.Unix()),
+		SourceTypeName: new("Steadybit"),
+		AggregationKey: new(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+		DateHappened:   new(event.EventTime.Unix()),
 	}, nil
 }
 
 func onExperimentCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
 	log.Info().Str("experimentKey", event.ExperimentExecution.ExperimentKey).Float32("executionId", event.ExperimentExecution.ExecutionId).Str("status", string(event.ExperimentExecution.State)).Msg("Received event about ended experiment.")
-	stepExecutions.Range(func(key, value interface{}) bool {
+	stepExecutions.Range(func(key, value any) bool {
 		stepExecution := value.(event_kit_api.ExperimentStepExecution)
 		if stepExecution.ExecutionId == event.ExperimentExecution.ExecutionId {
 			log.Debug().Msgf("Delete step execution data for id %.0f", stepExecution.ExecutionId)
@@ -105,9 +104,9 @@ func onExperimentCompleted(event event_kit_api.EventRequestBody) (*datadogV1.Eve
 			event.ExperimentExecution.State,
 			duration.Seconds()),
 		Tags:           tags,
-		SourceTypeName: extutil.Ptr("Steadybit"),
-		AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
-		DateHappened:   extutil.Ptr(event.EventTime.Unix()),
+		SourceTypeName: new("Steadybit"),
+		AggregationKey: new(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentExecution.ExecutionId)),
+		DateHappened:   new(event.EventTime.Unix()),
 	}, nil
 }
 
@@ -143,9 +142,9 @@ func onExperimentTargetStarted(event event_kit_api.EventRequestBody) (*datadogV1
 				getActionName(stepExecution),
 				getTargetName(*event.ExperimentStepTargetExecution)),
 			Tags:           tags,
-			SourceTypeName: extutil.Ptr("Steadybit"),
-			AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
-			DateHappened:   extutil.Ptr(event.EventTime.Unix()),
+			SourceTypeName: new("Steadybit"),
+			AggregationKey: new(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
+			DateHappened:   new(event.EventTime.Unix()),
 		}, nil
 	}
 
@@ -179,9 +178,9 @@ func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadog
 				duration.Seconds(),
 				getTargetName(*event.ExperimentStepTargetExecution)),
 			Tags:           tags,
-			SourceTypeName: extutil.Ptr("Steadybit"),
-			AggregationKey: extutil.Ptr(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
-			DateHappened:   extutil.Ptr(event.EventTime.Unix()),
+			SourceTypeName: new("Steadybit"),
+			AggregationKey: new(fmt.Sprintf("steadybit-execution-%.0f", event.ExperimentStepTargetExecution.ExecutionId)),
+			DateHappened:   new(event.EventTime.Unix()),
 		}, nil
 	}
 	return nil, nil

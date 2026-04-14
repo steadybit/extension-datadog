@@ -43,7 +43,7 @@ func Test_sendDatadogEvent(t *testing.T) {
 		Title:          "Experiment started",
 		Text:           "An experiment has been started by the Steadybit platform",
 		Tags:           []string{},
-		SourceTypeName: extutil.Ptr("Steadybit"),
+		SourceTypeName: new("Steadybit"),
 	}
 	sendDatadogEvent(mockedApi, &datadogEventBody)
 
@@ -66,7 +66,7 @@ func Test_getEventBaseTags(t *testing.T) {
 			name: "Successfully get base tags",
 			args: args{
 				event: event_kit_api.EventRequestBody{
-					Environment: extutil.Ptr(event_kit_api.Environment{
+					Environment: new(event_kit_api.Environment{
 						Id:   "test",
 						Name: "gateway",
 					}),
@@ -74,12 +74,12 @@ func Test_getEventBaseTags(t *testing.T) {
 					EventTime: eventTime,
 					Id:        uuid.MustParse("ccf6a26e-588f-446e-8eaa-d16b086e150e"),
 					Principal: event_kit_api.UserPrincipal{
-						Email:         extutil.Ptr("email"),
+						Email:         new("email"),
 						Name:          "Peter",
 						Username:      "Pan",
 						PrincipalType: string(event_kit_api.User),
 					},
-					Team: extutil.Ptr(event_kit_api.Team{
+					Team: new(event_kit_api.Team{
 						Id:   "test",
 						Key:  "test",
 						Name: "gateway",
@@ -108,7 +108,7 @@ func Test_getEventBaseTags(t *testing.T) {
 			name: "Successfully get base tags without Principal",
 			args: args{
 				event: event_kit_api.EventRequestBody{
-					Environment: extutil.Ptr(event_kit_api.Environment{
+					Environment: new(event_kit_api.Environment{
 						Id:   "test",
 						Name: "gateway",
 					}),
@@ -119,7 +119,7 @@ func Test_getEventBaseTags(t *testing.T) {
 						Name:          "MyFancyToken",
 						PrincipalType: string(event_kit_api.AccessToken),
 					},
-					Team: extutil.Ptr(event_kit_api.Team{
+					Team: new(event_kit_api.Team{
 						Id:   "test",
 						Key:  "test",
 						Name: "gateway",
@@ -171,12 +171,12 @@ func Test_getExecutionTags(t *testing.T) {
 			name: "Successfully get execution tags",
 			args: args{
 				event: event_kit_api.EventRequestBody{
-					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
-						EndedTime:     extutil.Ptr(endedTime),
+					ExperimentExecution: new(event_kit_api.ExperimentExecution{
+						EndedTime:     new(endedTime),
 						ExecutionId:   42,
 						ExperimentKey: "ExperimentKey",
-						Reason:        extutil.Ptr("Reason"),
-						ReasonDetails: extutil.Ptr("ReasonDetails"),
+						Reason:        new("Reason"),
+						ReasonDetails: new("ReasonDetails"),
 						Hypothesis:    "Hypothesis",
 						Name:          "Name",
 						PreparedTime:  eventTime,
@@ -198,12 +198,12 @@ func Test_getExecutionTags(t *testing.T) {
 			name: "Successfully get execution tags without hypothesis",
 			args: args{
 				event: event_kit_api.EventRequestBody{
-					ExperimentExecution: extutil.Ptr(event_kit_api.ExperimentExecution{
-						EndedTime:     extutil.Ptr(endedTime),
+					ExperimentExecution: new(event_kit_api.ExperimentExecution{
+						EndedTime:     new(endedTime),
 						ExecutionId:   42,
 						ExperimentKey: "ExperimentKey",
-						Reason:        extutil.Ptr("Reason"),
-						ReasonDetails: extutil.Ptr("ReasonDetails"),
+						Reason:        new("Reason"),
+						ReasonDetails: new("ReasonDetails"),
 						Hypothesis:    "",
 						Name:          "Name",
 						PreparedTime:  eventTime,
@@ -249,13 +249,13 @@ func Test_getStepTags(t *testing.T) {
 				stepExecution: event_kit_api.ExperimentStepExecution{
 					Id:          uuid.UUID{},
 					Type:        event_kit_api.Action,
-					ActionId:    extutil.Ptr("com.steadybit.action.example"),
-					ActionName:  extutil.Ptr("example-action"),
+					ActionId:    new("com.steadybit.action.example"),
+					ActionName:  new("example-action"),
 					ActionKind:  extutil.Ptr(event_kit_api.Attack),
-					CustomLabel: extutil.Ptr("My very own label"),
+					CustomLabel: new("My very own label"),
 					State:       event_kit_api.ExperimentStepExecutionStateFailed,
-					EndedTime:   extutil.Ptr(endedTime),
-					StartedTime: extutil.Ptr(startedTime),
+					EndedTime:   new(endedTime),
+					StartedTime: new(startedTime),
 				},
 			},
 			want: []string{
@@ -270,7 +270,7 @@ func Test_getStepTags(t *testing.T) {
 				stepExecution: event_kit_api.ExperimentStepExecution{
 					Id:         uuid.UUID{},
 					Type:       event_kit_api.Action,
-					ActionId:   extutil.Ptr("com.steadybit.action.example"),
+					ActionId:   new("com.steadybit.action.example"),
 					ActionKind: extutil.Ptr(event_kit_api.Attack),
 					State:      event_kit_api.ExperimentStepExecutionStateCompleted,
 				},
@@ -471,20 +471,20 @@ func Test_onExperimentStepStarted(t *testing.T) {
 			name: "should emit event for experiment target started",
 			args: args{
 				stepEvent: event_kit_api.EventRequestBody{
-					Environment: extutil.Ptr(event_kit_api.Environment{
+					Environment: new(event_kit_api.Environment{
 						Id:   "test",
 						Name: "gateway",
 					}),
 					EventName: "experiment.step.started",
 					EventTime: eventTime,
 					Id:        stepId,
-					ExperimentStepExecution: extutil.Ptr(event_kit_api.ExperimentStepExecution{
+					ExperimentStepExecution: new(event_kit_api.ExperimentStepExecution{
 						ExecutionId:   42,
 						ExperimentKey: "ExperimentKey",
 						Id:            stepId,
-						ActionId:      extutil.Ptr("some_action_id"),
-						ActionName:    extutil.Ptr("started step"),
-						CustomLabel:   extutil.Ptr("custom label"),
+						ActionId:      new("some_action_id"),
+						ActionName:    new("started step"),
+						CustomLabel:   new("custom label"),
 						ActionKind:    extutil.Ptr(event_kit_api.Attack),
 					}),
 					Tenant: event_kit_api.Tenant{
@@ -493,14 +493,14 @@ func Test_onExperimentStepStarted(t *testing.T) {
 					},
 				},
 				targetEvent: event_kit_api.EventRequestBody{
-					Environment: extutil.Ptr(event_kit_api.Environment{
+					Environment: new(event_kit_api.Environment{
 						Id:   "test",
 						Name: "gateway",
 					}),
 					EventName: "experiment.step.target.started",
 					EventTime: eventTime,
 					Id:        stepId,
-					ExperimentStepTargetExecution: extutil.Ptr(event_kit_api.ExperimentStepTargetExecution{
+					ExperimentStepTargetExecution: new(event_kit_api.ExperimentStepTargetExecution{
 						ExecutionId:     42,
 						ExperimentKey:   "ExperimentKey",
 						StepExecutionId: stepId,
@@ -517,8 +517,8 @@ func Test_onExperimentStepStarted(t *testing.T) {
 				},
 			},
 			want: &datadogV1.EventCreateRequest{
-				AggregationKey: extutil.Ptr("steadybit-execution-42"),
-				SourceTypeName: extutil.Ptr("Steadybit"),
+				AggregationKey: new("steadybit-execution-42"),
+				SourceTypeName: new("Steadybit"),
 				Tags: []string{
 					"step_action_name:started step",
 					"step_custom_label:custom label",
@@ -537,7 +537,7 @@ func Test_onExperimentStepStarted(t *testing.T) {
 				},
 				Title:        "Experiment 'ExperimentKey' - Attack started",
 				Text:         "%%% \nExperiment `ExperimentKey` (execution `42`) - Attack `custom label` started.\n\nTarget:test\n %%%",
-				DateHappened: extutil.Ptr(eventTime.Unix()),
+				DateHappened: new(eventTime.Unix()),
 			},
 		},
 	}
