@@ -50,18 +50,18 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 		Label:       "Create Downtime",
 		Description: "Start a Monitor Downtime for a given duration.",
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
-		Icon:        extutil.Ptr(monitorIcon),
-		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
+		Icon:        new(monitorIcon),
+		TargetSelection: new(action_kit_api.TargetSelection{
 			TargetType:          monitorTargetId,
 			QuantityRestriction: extutil.Ptr(action_kit_api.QuantityRestrictionAll),
-			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+			SelectionTemplates: new([]action_kit_api.TargetSelectionTemplate{
 				{
 					Label: "monitor name",
 					Query: "datadog.monitor.name=\"\"",
 				},
 			}),
 		}),
-		Technology: extutil.Ptr("Datadog"),
+		Technology: new("Datadog"),
 
 		Kind:        action_kit_api.Other,
 		TimeControl: action_kit_api.TimeControlExternal,
@@ -69,23 +69,23 @@ func (m *MonitorDowntimeAction) Describe() action_kit_api.ActionDescription {
 			{
 				Name:         "duration",
 				Label:        "Duration",
-				Description:  extutil.Ptr(""),
+				Description:  new(""),
 				Type:         action_kit_api.ActionParameterTypeDuration,
-				DefaultValue: extutil.Ptr("30s"),
-				Order:        extutil.Ptr(1),
-				Required:     extutil.Ptr(true),
+				DefaultValue: new("30s"),
+				Order:        new(1),
+				Required:     new(true),
 			},
 			{
 				Name:         "notify",
 				Label:        "Notify after Downtime if unhealthy",
-				Description:  extutil.Ptr("Should datadog notify after the Downtime if the monitor is in an unhealthy state?"),
+				Description:  new("Should datadog notify after the Downtime if the monitor is in an unhealthy state?"),
 				Type:         action_kit_api.ActionParameterTypeBoolean,
-				DefaultValue: extutil.Ptr("true"),
-				Order:        extutil.Ptr(2),
-				Required:     extutil.Ptr(true),
+				DefaultValue: new("true"),
+				Order:        new(2),
+				Required:     new(true),
 			},
 		},
-		Stop: extutil.Ptr(action_kit_api.MutatingEndpointReference{}),
+		Stop: new(action_kit_api.MutatingEndpointReference{}),
 	}
 }
 
@@ -147,13 +147,13 @@ func MonitorDowntimeStart(ctx context.Context, state *MonitorDowntimeState, api 
 						MonitorId: state.MonitorId,
 					},
 				},
-				Message: *datadog.NewNullableString(extutil.Ptr(message)),
+				Message: *datadog.NewNullableString(new(message)),
 				Schedule: &datadogV2.DowntimeScheduleCreateRequest{
 					DowntimeScheduleOneTimeCreateUpdateRequest: &datadogV2.DowntimeScheduleOneTimeCreateUpdateRequest{
-						End: *datadog.NewNullableTime(extutil.Ptr(state.End)),
+						End: *datadog.NewNullableTime(new(state.End)),
 					},
 				},
-				MuteFirstRecoveryNotification: extutil.Ptr(true),
+				MuteFirstRecoveryNotification: new(true),
 				NotifyEndTypes:                notifyEndType,
 				Scope:                         "*",
 			},

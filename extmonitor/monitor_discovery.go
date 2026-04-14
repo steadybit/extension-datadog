@@ -17,7 +17,6 @@ import (
 	"github.com/steadybit/discovery-kit/go/discovery_kit_sdk"
 	"github.com/steadybit/extension-datadog/config"
 	"github.com/steadybit/extension-kit/extbuild"
-	"github.com/steadybit/extension-kit/extutil"
 )
 
 type monitorDiscovery struct {
@@ -39,7 +38,7 @@ func (d *monitorDiscovery) Describe() discovery_kit_api.DiscoveryDescription {
 	return discovery_kit_api.DiscoveryDescription{
 		Id: monitorTargetId,
 		Discover: discovery_kit_api.DescribingEndpointReferenceWithCallInterval{
-			CallInterval: extutil.Ptr("1m"),
+			CallInterval: new("1m"),
 		},
 	}
 }
@@ -48,9 +47,9 @@ func (d *monitorDiscovery) DescribeTarget() discovery_kit_api.TargetDescription 
 	return discovery_kit_api.TargetDescription{
 		Id:       monitorTargetId,
 		Label:    discovery_kit_api.PluralLabel{One: "Datadog Monitor", Other: "Datadog Monitors"},
-		Category: extutil.Ptr("monitoring"),
+		Category: new("monitoring"),
 		Version:  extbuild.GetSemverVersionStringOrUnknown(),
-		Icon:     extutil.Ptr(monitorIcon),
+		Icon:     new(monitorIcon),
 		Table: discovery_kit_api.Table{
 			Columns: []discovery_kit_api.Column{
 				{Attribute: "datadog.monitor.name"},
@@ -102,8 +101,8 @@ func getAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []
 	result := make([]discovery_kit_api.Target, 0, 500)
 
 	parameters := datadogV1.NewListMonitorsOptionalParameters()
-	parameters.PageSize = extutil.Ptr(int32(200))
-	parameters.Page = extutil.Ptr(int64(0))
+	parameters.PageSize = new(int32(200))
+	parameters.Page = new(int64(0))
 
 	start := time.Now()
 	for {
@@ -135,7 +134,7 @@ func getAllMonitors(ctx context.Context, api ListMonitorsApi, siteUrl string) []
 			result = append(result, toTarget(monitor, siteUrl))
 		}
 
-		parameters.Page = extutil.Ptr(*parameters.Page + 1)
+		parameters.Page = new(*parameters.Page + 1)
 	}
 	log.Debug().Msgf("Discovery took %s, returning %d monitors.", time.Since(start), len(result))
 	return discovery_kit_commons.ApplyAttributeExcludes(result, config.Config.DiscoveryAttributesExcludesMonitor)

@@ -54,18 +54,18 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 		Label:       "Monitor Status",
 		Description: "collects information about the monitor status and optionally verifies that the monitor has an expected status.",
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
-		Icon:        extutil.Ptr(monitorIcon),
-		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
+		Icon:        new(monitorIcon),
+		TargetSelection: new(action_kit_api.TargetSelection{
 			TargetType:          monitorTargetId,
 			QuantityRestriction: extutil.Ptr(action_kit_api.QuantityRestrictionAll),
-			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+			SelectionTemplates: new([]action_kit_api.TargetSelectionTemplate{
 				{
 					Label: "monitor name",
 					Query: "datadog.monitor.name=\"\"",
 				},
 			}),
 		}),
-		Technology: extutil.Ptr("Datadog"),
+		Technology: new("Datadog"),
 
 		Kind:        action_kit_api.Check,
 		TimeControl: action_kit_api.TimeControlInternal,
@@ -73,18 +73,18 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 			{
 				Name:         "duration",
 				Label:        "Duration",
-				Description:  extutil.Ptr(""),
+				Description:  new(""),
 				Type:         action_kit_api.ActionParameterTypeDuration,
-				DefaultValue: extutil.Ptr("30s"),
-				Order:        extutil.Ptr(1),
-				Required:     extutil.Ptr(true),
+				DefaultValue: new("30s"),
+				Order:        new(1),
+				Required:     new(true),
 			},
 			{
 				Name:        "expectedStatus",
 				Label:       "Expected Status",
-				Description: extutil.Ptr(""),
+				Description: new(""),
 				Type:        action_kit_api.ActionParameterTypeString,
-				Options: extutil.Ptr([]action_kit_api.ParameterOption{
+				Options: new([]action_kit_api.ParameterOption{
 					action_kit_api.ExplicitParameterOption{
 						Label: "Ok",
 						Value: string(datadogV1.MONITOROVERALLSTATES_OK),
@@ -114,17 +114,17 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 						Value: string(datadogV1.MONITOROVERALLSTATES_IGNORED),
 					},
 				}),
-				Deprecated:         extutil.Ptr(true),
-				DeprecationMessage: extutil.Ptr("Use 'Expected Status List' instead."),
-				Required:           extutil.Ptr(false),
-				Order:              extutil.Ptr(2),
+				Deprecated:         new(true),
+				DeprecationMessage: new("Use 'Expected Status List' instead."),
+				Required:           new(false),
+				Order:              new(2),
 			},
 			{
 				Name:        "expectedStatusList",
 				Label:       "Expected Status List",
-				Description: extutil.Ptr(""),
+				Description: new(""),
 				Type:        action_kit_api.ActionParameterTypeStringArray,
-				Options: extutil.Ptr([]action_kit_api.ParameterOption{
+				Options: new([]action_kit_api.ParameterOption{
 					action_kit_api.ExplicitParameterOption{
 						Label: "Ok",
 						Value: string(datadogV1.MONITOROVERALLSTATES_OK),
@@ -154,16 +154,16 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 						Value: string(datadogV1.MONITOROVERALLSTATES_IGNORED),
 					},
 				}),
-				Required: extutil.Ptr(false),
-				Order:    extutil.Ptr(3),
+				Required: new(false),
+				Order:    new(3),
 			},
 			{
 				Name:         "statusCheckMode",
 				Label:        "Status Check Mode",
-				Description:  extutil.Ptr("How often should the status be expected?"),
+				Description:  new("How often should the status be expected?"),
 				Type:         action_kit_api.ActionParameterTypeString,
-				DefaultValue: extutil.Ptr(statusCheckModeAllTheTime),
-				Options: extutil.Ptr([]action_kit_api.ParameterOption{
+				DefaultValue: new(statusCheckModeAllTheTime),
+				Options: new([]action_kit_api.ParameterOption{
 					action_kit_api.ExplicitParameterOption{
 						Label: "All the time",
 						Value: statusCheckModeAllTheTime,
@@ -173,20 +173,20 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 						Value: statusCheckModeAtLeastOnce,
 					},
 				}),
-				Required: extutil.Ptr(true),
-				Order:    extutil.Ptr(4),
+				Required: new(true),
+				Order:    new(4),
 			},
 			{
 				Name:        "multiAlertFilter",
 				Label:       "Multi Alert Filter",
-				Description: extutil.Ptr("Filter to only consider alerts for specific groups of a multi alert."),
+				Description: new("Filter to only consider alerts for specific groups of a multi alert."),
 				Type:        action_kit_api.ActionParameterTypeKeyValue,
-				Required:    extutil.Ptr(false),
-				Advanced:    extutil.Ptr(true),
-				Order:       extutil.Ptr(5),
+				Required:    new(false),
+				Advanced:    new(true),
+				Order:       new(5),
 			},
 		},
-		Widgets: extutil.Ptr([]action_kit_api.Widget{
+		Widgets: new([]action_kit_api.Widget{
 			action_kit_api.StateOverTimeWidget{
 				Type:  action_kit_api.ComSteadybitWidgetStateOverTime,
 				Title: "Datadog Monitor Status",
@@ -202,18 +202,18 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Tooltip: action_kit_api.StateOverTimeWidgetTooltipConfig{
 					From: "tooltip",
 				},
-				Url: extutil.Ptr(action_kit_api.StateOverTimeWidgetUrlConfig{
-					From: extutil.Ptr("url"),
+				Url: new(action_kit_api.StateOverTimeWidgetUrlConfig{
+					From: new("url"),
 				}),
-				Value: extutil.Ptr(action_kit_api.StateOverTimeWidgetValueConfig{
-					Hide: extutil.Ptr(true),
+				Value: new(action_kit_api.StateOverTimeWidgetValueConfig{
+					Hide: new(true),
 				}),
 			},
 		}),
 		Prepare: action_kit_api.MutatingEndpointReference{},
 		Start:   action_kit_api.MutatingEndpointReference{},
-		Status: extutil.Ptr(action_kit_api.MutatingEndpointReferenceWithCallInterval{
-			CallInterval: extutil.Ptr("5s"),
+		Status: new(action_kit_api.MutatingEndpointReferenceWithCallInterval{
+			CallInterval: new("5s"),
 		}),
 	}
 }
@@ -284,7 +284,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	var monitor datadogV1.Monitor
 	var resp *http.Response
 	var err error
-	for attempt := 0; attempt < 3; attempt++ {
+	for range 3 {
 		if useMultiAlertFilter {
 			monitor, resp, err = api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters().WithGroupStates("all"))
 		} else {
@@ -309,7 +309,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 				if len(tags) == 0 {
 					tags = "<none>"
 				}
-				checkError = extutil.Ptr(action_kit_api.ActionKitError{
+				checkError = new(action_kit_api.ActionKitError{
 					Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
 						*monitor.Name,
 						state.MonitorId,
@@ -328,7 +328,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 				if len(tags) == 0 {
 					tags = "<none>"
 				}
-				checkError = extutil.Ptr(action_kit_api.ActionKitError{
+				checkError = new(action_kit_api.ActionKitError{
 					Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) didn't have status '%s' at least once.",
 						*monitor.Name,
 						state.MonitorId,
@@ -347,7 +347,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	return &action_kit_api.StatusResult{
 		Completed: completed,
 		Error:     checkError,
-		Metrics:   extutil.Ptr(metrics),
+		Metrics:   new(metrics),
 	}, nil
 }
 
@@ -450,8 +450,8 @@ func toMetric(monitorId *int64, monitorName *string, states []string, now time.T
 	}
 
 	monitorIdString := strconv.FormatInt(*monitorId, 10)
-	return extutil.Ptr(action_kit_api.Metric{
-		Name: extutil.Ptr("datadog_monitor_status"),
+	return new(action_kit_api.Metric{
+		Name: new("datadog_monitor_status"),
 		Metric: map[string]string{
 			"datadog.monitor.id":   monitorIdString + filterId,
 			"datadog.monitor.name": *monitorName + filterName,

@@ -29,13 +29,13 @@ func (m *datadogGetMonitorClientMock) GetMonitor(ctx context.Context, monitorId 
 func TestPrepareExtractsState(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration":           1000 * 60,
 			"expectedStatus":     datadogV1.MONITOROVERALLSTATES_OK,
 			"expectedStatusList": []string{string(datadogV1.MONITOROVERALLSTATES_OK), string(datadogV1.MONITOROVERALLSTATES_NO_DATA)},
 			"statusCheckMode":    statusCheckModeAtLeastOnce,
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id":          {"12349876"},
 				"datadog.monitor.multi-alert": {"true"},
@@ -61,10 +61,10 @@ func TestPrepareExtractsState(t *testing.T) {
 func TestPrepareExtractsStateWithoutStatusCheck(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration": 1000 * 60,
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id":          {"12349876"},
 				"datadog.monitor.multi-alert": {"true"},
@@ -90,12 +90,12 @@ func TestPrepareExtractsStateWithoutStatusCheck(t *testing.T) {
 func TestPrepareExtractsStateDeprecatedExpextedStatus(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration":        1000 * 60,
 			"expectedStatus":  datadogV1.MONITOROVERALLSTATES_OK,
 			"statusCheckMode": statusCheckModeAtLeastOnce,
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id":          {"12349876"},
 				"datadog.monitor.multi-alert": {"true"},
@@ -121,10 +121,10 @@ func TestPrepareExtractsStateDeprecatedExpextedStatus(t *testing.T) {
 func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration": 1000 * 60,
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id":          {"12349876"},
 				"datadog.monitor.multi-alert": {"true"},
@@ -148,10 +148,10 @@ func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
 func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration": 1000 * 60,
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id":          {"NOT AN INT"},
 				"datadog.monitor.multi-alert": {"true"},
@@ -172,13 +172,13 @@ func TestPrepareReportsMonitorIdProblems(t *testing.T) {
 func TestPrepareFailsWithMultiAlertFilterAndNoMultiAlertMonitor(t *testing.T) {
 	// Given
 	request := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration": 1000 * 60,
 			"multiAlertFilter": []any{
 				map[string]any{"key": "deployment", "value": "foobar"},
 			},
 		},
-		Target: extutil.Ptr(action_kit_api.Target{
+		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
 				"datadog.monitor.id":          {"12349876"},
 				"datadog.monitor.multi-alert": {"false"},
@@ -199,7 +199,7 @@ func TestPrepareFailsWithMultiAlertFilterAndNoMultiAlertMonitor(t *testing.T) {
 func TestStatusReportsIssuesOnMissingMonitor(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
-	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{}, extutil.Ptr(http.Response{
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{}, new(http.Response{
 		StatusCode: 200,
 	}), fmt.Errorf("intentional error"))
 
@@ -221,10 +221,10 @@ func TestAllTheTimeSuccess(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil)
 
@@ -250,10 +250,10 @@ func TestAllTheTimeSuccessWithMultiAlertFilter(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_ALERT),
-		State: extutil.Ptr(datadogV1.MonitorState{
+		State: new(datadogV1.MonitorState{
 			Groups: map[string]datadogV1.MonitorStateGroup{
 				"deployment:foo,namespace:default": {
 					Status: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
@@ -266,7 +266,7 @@ func TestAllTheTimeSuccessWithMultiAlertFilter(t *testing.T) {
 				},
 			},
 		}),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil)
 
@@ -293,10 +293,10 @@ func TestAllTheTimeExpectationMismatch(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil)
 
@@ -328,9 +328,9 @@ func TestAllTheTimeExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name: extutil.Ptr("gateway pods ready"),
-		Id:   extutil.Ptr(int64(1234)),
-		State: extutil.Ptr(datadogV1.MonitorState{
+		Name: new("gateway pods ready"),
+		Id:   new(int64(1234)),
+		State: new(datadogV1.MonitorState{
 			Groups: map[string]datadogV1.MonitorStateGroup{
 				"deployment:foo,namespace:default": {
 					Status: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
@@ -343,7 +343,7 @@ func TestAllTheTimeExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 				},
 			},
 		}),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil)
 
@@ -379,10 +379,10 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -414,10 +414,10 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	// ----------------------------------------
 	// Given
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_OK),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -437,10 +437,10 @@ func TestAtLeastOnceSuccess(t *testing.T) {
 	// ----------------------------------------
 	//Given
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 	state.End = time.Now().Add(time.Minute * -1) //Simulate that the time has passed
@@ -463,10 +463,10 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-		State: extutil.Ptr(datadogV1.MonitorState{
+		State: new(datadogV1.MonitorState{
 			Groups: map[string]datadogV1.MonitorStateGroup{
 				"deployment:foo,namespace:default": {
 					Status: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
@@ -479,7 +479,7 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 				},
 			},
 		}),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -512,10 +512,10 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 	// ----------------------------------------
 	// Given
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-		State: extutil.Ptr(datadogV1.MonitorState{
+		State: new(datadogV1.MonitorState{
 			Groups: map[string]datadogV1.MonitorStateGroup{
 				"deployment:foo,namespace:default": {
 					Status: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_OK),
@@ -528,7 +528,7 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 				},
 			},
 		}),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -548,10 +548,10 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 	// ----------------------------------------
 	//Given
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-		State: extutil.Ptr(datadogV1.MonitorState{
+		State: new(datadogV1.MonitorState{
 			Groups: map[string]datadogV1.MonitorStateGroup{
 				"deployment:foo,namespace:default": {
 					Status: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
@@ -564,7 +564,7 @@ func TestAtLeastOnceSuccessWithMultiAlertFilter(t *testing.T) {
 				},
 			},
 		}),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 	state.End = time.Now().Add(time.Minute * -1) //Simulate that the time has passed
@@ -584,10 +584,10 @@ func TestAtLeastOnceExpectationMismatch(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name:         extutil.Ptr("gateway pods ready"),
-		Id:           extutil.Ptr(int64(1234)),
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
 		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -619,9 +619,9 @@ func TestAtLeastOnceExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
-		Name: extutil.Ptr("gateway pods ready"),
-		Id:   extutil.Ptr(int64(1234)),
-		State: extutil.Ptr(datadogV1.MonitorState{
+		Name: new("gateway pods ready"),
+		Id:   new(int64(1234)),
+		State: new(datadogV1.MonitorState{
 			Groups: map[string]datadogV1.MonitorStateGroup{
 				"deployment:foo,namespace:default": {
 					Status: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
@@ -634,7 +634,7 @@ func TestAtLeastOnceExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 				},
 			},
 		}),
-	}, extutil.Ptr(http.Response{
+	}, new(http.Response{
 		StatusCode: 200,
 	}), nil).Once()
 
@@ -667,14 +667,14 @@ func Test_Should_Retry_On_Error(t *testing.T) {
 	// Given
 	mockedApi := new(datadogGetMonitorClientMock)
 	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).
-		Return(datadogV1.Monitor{}, extutil.Ptr(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error")).Once().
-		Return(datadogV1.Monitor{}, extutil.Ptr(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error")).Once().
+		Return(datadogV1.Monitor{}, new(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error")).Once().
+		Return(datadogV1.Monitor{}, new(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error")).Once().
 		Return(datadogV1.Monitor{
-			Name:         extutil.Ptr("gateway pods ready"),
-			Id:           extutil.Ptr(int64(1234)),
+			Name:         new("gateway pods ready"),
+			Id:           new(int64(1234)),
 			OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
 		},
-			extutil.Ptr(http.Response{StatusCode: 200}),
+			new(http.Response{StatusCode: 200}),
 			nil).Once()
 
 	action := MonitorStatusCheckAction{}
@@ -701,7 +701,7 @@ func TestCreateMetric(t *testing.T) {
 	// When
 	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
 	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
-	metric := toMetric(extutil.Ptr(int64(42)), extutil.Ptr("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_ALERT)}, now, start, end, siteUrl, nil)
+	metric := toMetric(new(int64(42)), new("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_ALERT)}, now, start, end, siteUrl, nil)
 
 	// Then
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
@@ -722,7 +722,7 @@ func TestCreateMetricOk(t *testing.T) {
 	// When
 	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
 	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
-	metric := toMetric(extutil.Ptr(int64(42)), extutil.Ptr("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_OK)}, now, start, end, siteUrl, nil)
+	metric := toMetric(new(int64(42)), new("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_OK)}, now, start, end, siteUrl, nil)
 
 	// Then
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
@@ -743,7 +743,7 @@ func TestCreateMetricForUnknownState(t *testing.T) {
 	// When
 	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
 	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
-	metric := toMetric(extutil.Ptr(int64(42)), extutil.Ptr("gateway readiness"), []string{}, now, start, end, siteUrl, nil)
+	metric := toMetric(new(int64(42)), new("gateway readiness"), []string{}, now, start, end, siteUrl, nil)
 
 	// Then
 	require.Equal(t, "datadog_monitor_status", *metric.Name)
@@ -764,7 +764,7 @@ func TestCreateMetricWithFilter(t *testing.T) {
 	// When
 	start := time.Date(2023, 7, 4, 13, 0, 0, 0, time.UTC)
 	end := time.Date(2023, 7, 4, 13, 10, 0, 0, time.UTC)
-	metric := toMetric(extutil.Ptr(int64(42)), extutil.Ptr("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_ALERT)}, now, start, end, siteUrl, map[string]string{"deployment": "foo", "namespace": "bar"})
+	metric := toMetric(new(int64(42)), new("gateway readiness"), []string{string(datadogV1.MONITOROVERALLSTATES_ALERT)}, now, start, end, siteUrl, map[string]string{"deployment": "foo", "namespace": "bar"})
 
 	// Then
 	require.Equal(t, "https://app.datadoghq.eu/monitors/42?from_ts=1688475600000&to_ts=1688476200000&q=deployment%3Afoo%20AND%20namespace%3Abar", metric.Metric["url"])
