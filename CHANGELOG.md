@@ -3,6 +3,7 @@
 ## (next)
 
 - Bump Go to 1.26.2
+- Update dependencies
 
 ## v1.8.17
 
