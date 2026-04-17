@@ -11,6 +11,35 @@ entries:
         - name: Steadybit reliability hub
           url: https://hub.steadybit.com
     apiVersion: v2
+    appVersion: v1.8.18
+    created: "2026-04-17T11:15:09.844434395Z"
+    dependencies:
+    - name: extensionlib
+      repository: https://steadybit.github.io/helm-charts
+      version: ^1.4.4
+    description: Steadybit Kubernetes extension Helm chart for Datadog.
+    digest: 27308a7d959bef1c7d6cbb708f944902a5372902659dbb3f131347abc7b6d689
+    home: https://www.steadybit.com/
+    icon: https://steadybit-website-assets.s3.amazonaws.com/logo-symbol-transparent.png
+    maintainers:
+    - email: daniel.reuter@steadybit.com
+      name: reuda
+    name: steadybit-extension-datadog
+    sources:
+    - https://github.com/steadybit/extension-datadog
+    urls:
+    - https://github.com/steadybit/extension-datadog/releases/download/steadybit-extension-datadog-1.5.22/steadybit-extension-datadog-1.5.22.tgz
+    version: 1.5.22
+  - annotations:
+      artifacthub.io/images: |
+        - name: logo
+          image: https://steadybit-website-assets.s3.amazonaws.com/logo-symbol-transparent.png
+      artifacthub.io/links: |-
+        - name: Steadybit website
+          url: https://www.steadybit.com
+        - name: Steadybit reliability hub
+          url: https://hub.steadybit.com
+    apiVersion: v2
     appVersion: v1.8.17
     created: "2026-04-13T12:15:46.559503528Z"
     dependencies:
@@ -1277,4 +1306,4 @@ entries:
     urls:
     - https://github.com/steadybit/extension-datadog/releases/download/steadybit-extension-datadog-1.4.4/steadybit-extension-datadog-1.4.4.tgz
     version: 1.4.4
-generated: "2026-04-13T12:15:46.5599181Z"
+generated: "2026-04-17T11:15:09.844893119Z"
