@@ -152,6 +152,8 @@ extraEnv: []
 extraEnvFrom: []
 
 discovery:
+  # discovery.group -- Optional group identifier. When set, the extension adds steadybit.group=<value> to every discovered target. Used as an additional matcher in enrichment rules.
+  group: ""
   attributes:
     excludes:
       # discovery.attributes.excludes.monitor -- List of attributes to exclude from VM discovery.
