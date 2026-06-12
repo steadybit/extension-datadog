@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.8.21
+
+- build(deps): bump goreleaser/goreleaser from v2.15.4 to v2.16.0
+- chore: update to go 1.26.4
+- feat: add weekly auto patch-release workflow
+
 ## v1.8.20
 
 - Support discovery group attribute via `STEADYBIT_EXTENSION_DISCOVERY_GROUP` env var (or `discovery.group` Helm value) — when set, the extension adds `steadybit.group=<value>` to every discovered target
