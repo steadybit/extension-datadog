@@ -38,6 +38,11 @@ type MonitorStatusCheckState struct {
 	StatusCheckMode    string
 	StatusCheckSuccess bool
 	MultiAlertFilter   map[string]string `json:"multiAlertFilter"`
+	FailEarly          bool
+	// DeviationSeen and DeviationTitle are used in 'fail at end' mode (FailEarly = false) to remember
+	// that a deviating status was observed during the step so the failure can be reported once the step ends.
+	DeviationSeen  bool
+	DeviationTitle string
 }
 
 func NewMonitorStatusCheckAction() action_kit_sdk.Action[MonitorStatusCheckState] {
@@ -185,6 +190,16 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Advanced:    new(true),
 				Order:       new(5),
 			},
+			{
+				Name:         "failEarly",
+				Label:        "Fail early",
+				Description:  new("If enabled, the check fails as soon as a deviating status is observed. If disabled, the check keeps collecting events for the whole duration and only fails at the end of the step. Only affects the 'All the time' mode; 'At least once' can only be evaluated at the end of the step."),
+				Type:         action_kit_api.ActionParameterTypeBoolean,
+				DefaultValue: new("true"),
+				Advanced:     new(true),
+				Required:     new(false),
+				Order:        new(6),
+			},
 		},
 		Widgets: new([]action_kit_api.Widget{
 			action_kit_api.StateOverTimeWidget{
@@ -238,6 +253,12 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	if request.Config["statusCheckMode"] != nil {
 		statusCheckMode = fmt.Sprintf("%v", request.Config["statusCheckMode"])
 	}
+
+	// Default to failing early to preserve the previous behavior for experiments that don't set this parameter.
+	failEarly := true
+	if request.Config["failEarly"] != nil {
+		failEarly = extutil.ToBool(request.Config["failEarly"])
+	}
 	if (request.Config["multiAlertFilter"]) != nil {
 		multiAlertFilter, err := extutil.ToKeyValue(request.Config, "multiAlertFilter")
 		if err != nil {
@@ -260,6 +281,7 @@ func (m *MonitorStatusCheckAction) Prepare(_ context.Context, state *MonitorStat
 	state.End = end
 	state.ExpectedStatus = expectedStatus
 	state.StatusCheckMode = statusCheckMode
+	state.FailEarly = failEarly
 
 	return nil, nil
 }
@@ -309,13 +331,27 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 				if len(tags) == 0 {
 					tags = "<none>"
 				}
+				title := fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
+					*monitor.Name,
+					state.MonitorId,
+					tags,
+					strings.Join(monitorStates, ", "),
+					strings.Join(state.ExpectedStatus, ", "))
+				if state.FailEarly {
+					// Fail as soon as a deviating status is observed.
+					checkError = new(action_kit_api.ActionKitError{
+						Title:  title,
+						Status: extutil.Ptr(action_kit_api.Failed),
+					})
+				} else {
+					// Keep collecting events and remember the deviation to report it at the end of the step.
+					state.DeviationSeen = true
+					state.DeviationTitle = title
+				}
+			}
+			if !state.FailEarly && completed && state.DeviationSeen {
 				checkError = new(action_kit_api.ActionKitError{
-					Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
-						*monitor.Name,
-						state.MonitorId,
-						tags,
-						strings.Join(monitorStates, ", "),
-						strings.Join(state.ExpectedStatus, ", ")),
+					Title:  state.DeviationTitle,
 					Status: extutil.Ptr(action_kit_api.Failed),
 				})
 			}

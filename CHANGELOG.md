@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.23
+
+- Add a "Fail early" option to the monitor status check. When enabled (the default, matching the previous behavior), the check fails as soon as a deviating status is observed. When disabled, the check keeps collecting events for the whole duration and only fails at the end of the step.
+
 ## v1.8.22
 
 - build(deps): bump alpine from 3.23 to 3.24
