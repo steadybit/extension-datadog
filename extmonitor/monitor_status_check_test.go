@@ -56,6 +56,7 @@ func TestPrepareExtractsState(t *testing.T) {
 	require.True(t, state.End.After(time.Now()))
 	require.Equal(t, []string{"OK", "No Data"}, state.ExpectedStatus)
 	require.Equal(t, statusCheckModeAtLeastOnce, state.StatusCheckMode)
+	require.True(t, state.FailEarly) // defaults to true when not provided (non-breaking for old experiments)
 }
 
 func TestPrepareExtractsStateWithoutStatusCheck(t *testing.T) {
@@ -93,7 +94,8 @@ func TestPrepareExtractsStateDeprecatedExpextedStatus(t *testing.T) {
 		Config: map[string]any{
 			"duration":        1000 * 60,
 			"expectedStatus":  datadogV1.MONITOROVERALLSTATES_OK,
-			"statusCheckMode": statusCheckModeAtLeastOnce,
+			"statusCheckMode": statusCheckModeAllTheTime,
+			"failEarly":       false,
 		},
 		Target: new(action_kit_api.Target{
 			Attributes: map[string][]string{
@@ -115,7 +117,8 @@ func TestPrepareExtractsStateDeprecatedExpextedStatus(t *testing.T) {
 	require.NotNil(t, state.Start)
 	require.True(t, state.End.After(time.Now()))
 	require.Equal(t, []string{"OK"}, state.ExpectedStatus)
-	require.Equal(t, statusCheckModeAtLeastOnce, state.StatusCheckMode)
+	require.Equal(t, statusCheckModeAllTheTime, state.StatusCheckMode)
+	require.False(t, state.FailEarly) // explicitly set to false in the config
 }
 
 func TestPrepareSupportsMissingExpectedStatus(t *testing.T) {
@@ -306,6 +309,7 @@ func TestAllTheTimeExpectationMismatch(t *testing.T) {
 	state.End = time.Now().Add(time.Minute * 1) // time not yet up - early exit
 	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 	state.StatusCheckMode = statusCheckModeAllTheTime
+	state.FailEarly = true
 
 	// When
 	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
@@ -354,6 +358,7 @@ func TestAllTheTimeExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
 	state.StatusCheckMode = statusCheckModeAllTheTime
 	state.MultiAlertFilter = map[string]string{"namespace": "default"}
+	state.FailEarly = true
 
 	// When
 	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
@@ -370,6 +375,90 @@ func TestAllTheTimeExpectationMismatchWithMultiAlertFilter(t *testing.T) {
 	require.Equal(t, "gateway pods ready with filter namespace:default", metric.Metric["datadog.monitor.name"])
 	require.NotNil(t, metric.Timestamp)
 	require.Equal(t, float64(0), metric.Value)
+}
+
+func TestAllTheTimeFailAtEnd(t *testing.T) {
+	// ----------------------------------------
+	// First Call: Status deviates but time is not up - no error yet, deviation is remembered
+	// ----------------------------------------
+	// Given
+	mockedApi := new(datadogGetMonitorClientMock)
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
+		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_WARN),
+	}, new(http.Response{
+		StatusCode: 200,
+	}), nil).Once()
+
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * 1) // time not yet up
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
+	state.StatusCheckMode = statusCheckModeAllTheTime
+	state.FailEarly = false
+
+	// When
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+
+	// Then
+	require.Nil(t, err)
+	require.False(t, result.Completed)
+	require.Nil(t, result.Error) // does not fail early
+	require.True(t, state.DeviationSeen)
+
+	// ----------------------------------------
+	// Second Call: Status recovered but a deviation was seen earlier and time is up - fails at the end
+	// ----------------------------------------
+	// Given
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
+		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_OK),
+	}, new(http.Response{
+		StatusCode: 200,
+	}), nil).Once()
+	state.End = time.Now().Add(time.Minute * -1) // time is up
+
+	// When
+	result, err = monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+
+	// Then
+	require.Nil(t, err)
+	require.True(t, result.Completed)
+	require.NotNil(t, result.Error)
+	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) has status 'Warn' whereas 'OK' is expected.", result.Error.Title)
+	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
+}
+
+func TestAllTheTimeFailAtEndSucceedsWhenNeverDeviated(t *testing.T) {
+	// Given - status is always as expected, time is up
+	mockedApi := new(datadogGetMonitorClientMock)
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
+		Name:         new("gateway pods ready"),
+		Id:           new(int64(1234)),
+		OverallState: extutil.Ptr(datadogV1.MONITOROVERALLSTATES_OK),
+	}, new(http.Response{
+		StatusCode: 200,
+	}), nil)
+
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * -1) // time is up
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
+	state.StatusCheckMode = statusCheckModeAllTheTime
+	state.FailEarly = false
+
+	// When
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+
+	// Then
+	require.Nil(t, err)
+	require.True(t, result.Completed)
+	require.Nil(t, result.Error)
+	require.False(t, state.DeviationSeen)
 }
 
 func TestAtLeastOnceSuccess(t *testing.T) {
