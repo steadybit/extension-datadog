@@ -339,22 +339,20 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 				if len(tags) == 0 {
 					tags = "<none>"
 				}
-				title := fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
-					*monitor.Name,
-					state.MonitorId,
-					tags,
-					observedStatus,
-					strings.Join(state.ExpectedStatus, ", "))
+				expectedStatus := strings.Join(state.ExpectedStatus, ", ")
 				if state.FailEarly {
-					// Fail as soon as a deviating status is observed.
+					// Fail as soon as a deviating status is observed (present tense - it is deviating now).
 					checkError = new(action_kit_api.ActionKitError{
-						Title:  title,
+						Title: fmt.Sprintf("Monitor '%s' (id %d, tags: %s) has status '%s' whereas '%s' is expected.",
+							*monitor.Name, state.MonitorId, tags, observedStatus, expectedStatus),
 						Status: extutil.Ptr(action_kit_api.Failed),
 					})
 				} else {
-					// Keep collecting events and remember the deviation to report it at the end of the step.
+					// Keep collecting events and remember the deviation to report it at the end of the
+					// step (past tense - the status may have recovered by the time this is reported).
 					state.DeviationSeen = true
-					state.DeviationTitle = title
+					state.DeviationTitle = fmt.Sprintf("Monitor '%s' (id %d, tags: %s) had status '%s' whereas '%s' is expected.",
+						*monitor.Name, state.MonitorId, tags, observedStatus, expectedStatus)
 				}
 			}
 			if !state.FailEarly && completed && state.DeviationSeen {

@@ -428,7 +428,7 @@ func TestAllTheTimeFailAtEnd(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, result.Completed)
 	require.NotNil(t, result.Error)
-	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) has status 'Warn' whereas 'OK' is expected.", result.Error.Title)
+	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) had status 'Warn' whereas 'OK' is expected.", result.Error.Title)
 	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
 }
 
