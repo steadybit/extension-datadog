@@ -323,10 +323,18 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	completed := now.After(state.End)
 	var checkError *action_kit_api.ActionKitError
 	monitorStates := getMonitorStates(&monitor, state)
-	if len(state.ExpectedStatus) > 0 && len(monitorStates) > 0 {
+	if len(state.ExpectedStatus) > 0 {
 		log.Debug().Str("monitor", *monitor.Name).Strs("status", monitorStates).Strs("expected", state.ExpectedStatus).Msg("Monitor status")
+		// An empty monitorStates means the status could not be determined (e.g. the monitor reports
+		// an unknown/no-data state, or a multi alert filter matched no group). Treat that as a
+		// non-match so the check does not silently pass when the expected status was never observed.
+		statusMatches := len(monitorStates) > 0 && containsOnly(monitorStates, state.ExpectedStatus)
+		observedStatus := "Unknown"
+		if len(monitorStates) > 0 {
+			observedStatus = strings.Join(monitorStates, ", ")
+		}
 		if state.StatusCheckMode == statusCheckModeAllTheTime {
-			if !containsOnly(monitorStates, state.ExpectedStatus) {
+			if !statusMatches {
 				tags := strings.Join(monitor.Tags, ", ")
 				if len(tags) == 0 {
 					tags = "<none>"
@@ -335,7 +343,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 					*monitor.Name,
 					state.MonitorId,
 					tags,
-					strings.Join(monitorStates, ", "),
+					observedStatus,
 					strings.Join(state.ExpectedStatus, ", "))
 				if state.FailEarly {
 					// Fail as soon as a deviating status is observed.
@@ -356,7 +364,7 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 				})
 			}
 		} else if state.StatusCheckMode == statusCheckModeAtLeastOnce {
-			if containsOnly(monitorStates, state.ExpectedStatus) {
+			if statusMatches {
 				state.StatusCheckSuccess = true
 			}
 			if completed && !state.StatusCheckSuccess {

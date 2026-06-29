@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.24
+
+- Fix: the monitor status check no longer completes successfully when the monitor status cannot be determined (an unknown/no-data state, or a multi alert filter that matches no group). When an expected status is configured, an undeterminable status is now treated as a non-match, so "At least once" fails at the end and "All the time" reports a deviation.
+
 ## v1.8.23
 
 - Add a "Fail early" option to the monitor status check. When enabled (the default, matching the previous behavior), the check fails as soon as a deviating status is observed. When disabled, the check keeps collecting events for the whole duration and only fails at the end of the step.

@@ -461,6 +461,63 @@ func TestAllTheTimeFailAtEndSucceedsWhenNeverDeviated(t *testing.T) {
 	require.False(t, state.DeviationSeen)
 }
 
+func TestAtLeastOnceFailsOnUnknownStatus(t *testing.T) {
+	// Given - the monitor never reports a determinable status (overall state is unknown -> no states)
+	mockedApi := new(datadogGetMonitorClientMock)
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
+		Name: new("gateway pods ready"),
+		Id:   new(int64(1234)),
+	}, new(http.Response{
+		StatusCode: 200,
+	}), nil)
+
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * -1) // time is up
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
+	state.StatusCheckMode = statusCheckModeAtLeastOnce
+
+	// When
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+
+	// Then - an unknown status must not count as success, so the check fails at the end
+	require.Nil(t, err)
+	require.True(t, result.Completed)
+	require.False(t, state.StatusCheckSuccess)
+	require.NotNil(t, result.Error)
+	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) didn't have status '[OK]' at least once.", result.Error.Title)
+	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
+}
+
+func TestAllTheTimeFailsOnUnknownStatus(t *testing.T) {
+	// Given - the monitor never reports a determinable status (overall state is unknown -> no states)
+	mockedApi := new(datadogGetMonitorClientMock)
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).Return(datadogV1.Monitor{
+		Name: new("gateway pods ready"),
+		Id:   new(int64(1234)),
+	}, new(http.Response{
+		StatusCode: 200,
+	}), nil)
+
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute * 1) // time not yet up
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
+	state.StatusCheckMode = statusCheckModeAllTheTime
+	state.FailEarly = true
+
+	// When
+	result, err := monitorStatusCheckStatus(context.Background(), &state, mockedApi, "http://example.com")
+
+	// Then - an unknown status deviates from the expected status
+	require.Nil(t, err)
+	require.NotNil(t, result.Error)
+	require.Equal(t, "Monitor 'gateway pods ready' (id 1234, tags: <none>) has status 'Unknown' whereas 'OK' is expected.", result.Error.Title)
+	require.Contains(t, *result.Error.Status, action_kit_api.Failed)
+}
+
 func TestAtLeastOnceSuccess(t *testing.T) {
 	// ----------------------------------------
 	// First Call: Status is not ok - StatusCheckSuccess in State is still false - no exit (End not yet reached)
