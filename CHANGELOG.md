@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.25
+
+- Use past tense ("had status") for the monitor status check failure message when "Fail early" is disabled, since the monitor status may have recovered by the time the failure is reported at the end of the step. The fail-early message keeps the present tense ("has status").
+
 ## v1.8.24
 
 - Fix: the monitor status check no longer completes successfully when the monitor status cannot be determined (an unknown/no-data state, or a multi alert filter that matches no group). When an expected status is configured, an undeterminable status is now treated as a non-match, so "At least once" fails at the end and "All the time" reports a deviation.
