@@ -3,7 +3,7 @@
 
 module github.com/steadybit/extension-datadog
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.62.0
