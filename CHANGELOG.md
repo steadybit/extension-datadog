@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.8.23
+
+- build(deps): bump github.com/DataDog/datadog-api-client-go/v2
+- build(deps): bump github.com/steadybit/action-kit/go/action_kit_sdk
+- build(deps): bump github.com/steadybit/discovery-kit/go/discovery_kit_sdk
+- build(deps): bump github.com/steadybit/event-kit/go/event_kit_api
+- build(deps): bump github.com/steadybit/extension-kit
+- build(deps): bump goreleaser/goreleaser from v2.16.0 to v2.17.0
+- chore(deps): bump go to 1.26.5 (#224)
+- chore: add Claude Code workflows (#215)
+- chore: silence SonarQube finding on secrets: inherit in Claude workflows
+- ci: skip build on .trivyignore.yml-only changes [skip ci]
+- feat(monitor status check): add fail early option (#211)
+- fix(monitor status check): fail when monitor status is unknown (#216)
+- fix(monitor status check): use past tense for fail-at-end message (#217)
+- refactor: register extension index via exthttp.RegisterRevisionedHandler (#225)
+
 ## v1.8.25
 
 - Use past tense ("had status") for the monitor status check failure message when "Fail early" is disabled, since the monitor status may have recovered by the time the failure is reported at the end of the step. The fail-early message keeps the present tense ("has status").
