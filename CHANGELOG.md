@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.24
+
+- chore(deps): update dependencies
+
 ## v1.8.23
 
 - build(deps): bump github.com/DataDog/datadog-api-client-go/v2
