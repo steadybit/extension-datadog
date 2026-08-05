@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.8.25
+
+- build(deps): bump goreleaser/goreleaser from v2.17.0 to v2.17.1
+- feat: support filtering targets out of discovery
+- fix: emit the monitor status metric immediately on Start
+
 ## v1.8.24
 
 - chore(deps): update dependencies
