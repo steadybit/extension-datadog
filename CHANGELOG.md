@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.26
+
+- build(deps): bump github.com/DataDog/datadog-api-client-go/v2
+
 ## v1.8.25
 
 - build(deps): bump goreleaser/goreleaser from v2.17.0 to v2.17.1
