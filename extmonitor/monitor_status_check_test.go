@@ -839,6 +839,34 @@ func Test_Should_Retry_On_Error(t *testing.T) {
 	require.True(t, result.Completed)
 }
 
+func Test_Should_Stop_Retrying_When_Context_Is_Done(t *testing.T) {
+	// Given
+	mockedApi := new(datadogGetMonitorClientMock)
+	mockedApi.On("GetMonitor", mock.Anything, mock.Anything, mock.Anything).
+		Return(datadogV1.Monitor{}, new(http.Response{StatusCode: 500}), errors.New("500 Internal Server Error"))
+
+	action := MonitorStatusCheckAction{}
+	state := action.NewEmptyState()
+	state.MonitorId = 1234
+	state.End = time.Now().Add(time.Minute)
+	state.ExpectedStatus = []string{string(datadogV1.MONITOROVERALLSTATES_OK)}
+	state.StatusCheckMode = statusCheckModeAllTheTime
+
+	// The deadline expires before the first backoff elapses, mimicking the agent's Request-Timeout
+	// running out mid-request.
+	ctx, cancel := context.WithTimeout(context.Background(), getMonitorRetryBackoff/10)
+	defer cancel()
+
+	// When
+	result, err := monitorStatusCheckStatus(ctx, &state, mockedApi, "http://example.com")
+
+	// Then
+	require.Nil(t, result)
+	require.Error(t, err)
+	// Only the first attempt is made - the loop gives up instead of burning the remaining budget.
+	mockedApi.AssertNumberOfCalls(t, "GetMonitor", 1)
+}
+
 func TestCreateMetric(t *testing.T) {
 	// Given
 	now := time.Now()

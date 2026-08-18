@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV1"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/event-kit/go/event_kit_api"
@@ -32,6 +33,11 @@ type SendEventApi interface {
 	SendEvent(ctx context.Context, datadogEventBody datadogV1.EventCreateRequest) (datadogV1.EventCreateResponse, *http.Response, error)
 }
 
+// stepExecutionMaxAge is how long step execution data is kept when the matching
+// experiment-completed event never arrives (extension restart, or the platform giving up on
+// delivering the event). Without this, those entries would be retained for the process lifetime.
+const stepExecutionMaxAge = 24 * time.Hour
+
 var (
 	stepExecutions = sync.Map{}
 )
@@ -39,6 +45,21 @@ var (
 type StepInfo struct {
 	ActionName string
 	Tags       []string
+}
+
+// stepExecutionEntry wraps a step execution with the time it was stored, so stale entries can be
+// pruned even if their experiment never completes.
+type stepExecutionEntry struct {
+	stepExecution event_kit_api.ExperimentStepExecution
+	storedAt      time.Time
+}
+
+func loadStepExecution(stepExecutionId uuid.UUID) (event_kit_api.ExperimentStepExecution, bool) {
+	v, ok := stepExecutions.Load(stepExecutionId)
+	if !ok {
+		return event_kit_api.ExperimentStepExecution{}, false
+	}
+	return v.(stepExecutionEntry).stepExecution, true
 }
 
 type eventHandler func(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error)
@@ -83,10 +104,14 @@ func onExperimentStarted(event event_kit_api.EventRequestBody) (*datadogV1.Event
 
 func onExperimentCompleted(event event_kit_api.EventRequestBody) (*datadogV1.EventCreateRequest, error) {
 	log.Info().Str("experimentKey", event.ExperimentExecution.ExperimentKey).Float32("executionId", event.ExperimentExecution.ExecutionId).Str("status", string(event.ExperimentExecution.State)).Msg("Received event about ended experiment.")
+	now := time.Now()
 	stepExecutions.Range(func(key, value any) bool {
-		stepExecution := value.(event_kit_api.ExperimentStepExecution)
-		if stepExecution.ExecutionId == event.ExperimentExecution.ExecutionId {
-			log.Debug().Msgf("Delete step execution data for id %.0f", stepExecution.ExecutionId)
+		entry := value.(stepExecutionEntry)
+		if entry.stepExecution.ExecutionId == event.ExperimentExecution.ExecutionId {
+			log.Debug().Msgf("Delete step execution data for id %.0f", entry.stepExecution.ExecutionId)
+			stepExecutions.Delete(key)
+		} else if now.Sub(entry.storedAt) > stepExecutionMaxAge {
+			log.Debug().Msgf("Delete stale step execution data for id %.0f", entry.stepExecution.ExecutionId)
 			stepExecutions.Delete(key)
 		}
 		return true
@@ -114,7 +139,10 @@ func onExperimentStepStarted(event event_kit_api.EventRequestBody) (*datadogV1.E
 	if event.ExperimentStepExecution == nil {
 		return nil, errors.New("missing ExperimentStepExecution in event")
 	}
-	stepExecutions.Store(event.ExperimentStepExecution.Id, *event.ExperimentStepExecution)
+	stepExecutions.Store(event.ExperimentStepExecution.Id, stepExecutionEntry{
+		stepExecution: *event.ExperimentStepExecution,
+		storedAt:      time.Now(),
+	})
 	return nil, nil
 }
 
@@ -123,12 +151,11 @@ func onExperimentTargetStarted(event event_kit_api.EventRequestBody) (*datadogV1
 		return nil, errors.New("missing ExperimentStepTargetExecution in event")
 	}
 
-	var v, ok = stepExecutions.Load(event.ExperimentStepTargetExecution.StepExecutionId)
+	stepExecution, ok := loadStepExecution(event.ExperimentStepTargetExecution.StepExecutionId)
 	if !ok {
 		log.Warn().Msgf("Could not find step infos for step execution id %s", event.ExperimentStepTargetExecution.StepExecutionId)
 		return nil, nil
 	}
-	stepExecution := v.(event_kit_api.ExperimentStepExecution)
 
 	if stepExecution.ActionKind != nil && *stepExecution.ActionKind == event_kit_api.Attack {
 		tags := append(getStepTags(stepExecution), getEventBaseTags(event)...)
@@ -156,12 +183,11 @@ func onExperimentTargetCompleted(event event_kit_api.EventRequestBody) (*datadog
 		return nil, errors.New("missing ExperimentStepTargetExecution in event")
 	}
 
-	var v, ok = stepExecutions.Load(event.ExperimentStepTargetExecution.StepExecutionId)
+	stepExecution, ok := loadStepExecution(event.ExperimentStepTargetExecution.StepExecutionId)
 	if !ok {
 		log.Warn().Msgf("Could not find step infos for step execution id %s", event.ExperimentStepTargetExecution.StepExecutionId)
 		return nil, nil
 	}
-	stepExecution := v.(event_kit_api.ExperimentStepExecution)
 
 	if stepExecution.ActionKind != nil && *stepExecution.ActionKind == event_kit_api.Attack {
 		tags := append(getStepTags(stepExecution), getEventBaseTags(event)...)
