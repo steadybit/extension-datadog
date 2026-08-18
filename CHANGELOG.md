@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- fix: bound requests to the Datadog API with a timeout (`STEADYBIT_EXTENSION_API_TIMEOUT`, default
+  `10s`). The Datadog client used `http.DefaultClient`, which has no timeout, so a slow Datadog API
+  could block the monitor status check until the agent's request timeout elapsed (`503 Timeout`).
+- fix: the monitor status check now backs off between retries and stops retrying once the caller's
+  deadline has passed instead of issuing all 3 attempts regardless.
+- fix: bound the monitor discovery refresh with a timeout so a hanging Datadog API cannot stall the
+  refresh loop and serve stale targets indefinitely.
+- fix: prune step execution data that is retained when the matching `experiment-completed` event is
+  never delivered.
+
 ## v1.8.27
 
 - build(deps): bump github.com/stretchr/testify from 1.11.1 to 1.12.0

@@ -22,6 +22,11 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+const (
+	getMonitorAttempts     = 3
+	getMonitorRetryBackoff = 200 * time.Millisecond
+)
+
 type MonitorStatusCheckAction struct{}
 
 // Make sure action implements all required interfaces
@@ -315,7 +320,19 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 	var monitor datadogV1.Monitor
 	var resp *http.Response
 	var err error
-	for range 3 {
+	for attempt := range getMonitorAttempts {
+		if attempt > 0 {
+			// Back off between attempts instead of hammering an API that is already slow or rate
+			// limiting us, and give up as soon as the caller's deadline (the agent's
+			// Request-Timeout) has passed - further attempts would only burn the remaining budget
+			// and still end in a 503 "Timeout".
+			backoff := getMonitorRetryBackoff * time.Duration(1<<(attempt-1))
+			select {
+			case <-ctx.Done():
+				return nil, extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog: gave up after %d of %d attempts.", state.MonitorId, attempt, getMonitorAttempts), ctx.Err())
+			case <-time.After(backoff):
+			}
+		}
 		if useMultiAlertFilter {
 			monitor, resp, err = api.GetMonitor(ctx, state.MonitorId, *datadogV1.NewGetMonitorOptionalParameters().WithGroupStates("all"))
 		} else {
@@ -324,9 +341,10 @@ func monitorStatusCheckStatus(ctx context.Context, state *MonitorStatusCheckStat
 		if err == nil {
 			break
 		}
+		log.Debug().Err(err).Int("attempt", attempt+1).Int64("monitorId", state.MonitorId).Msg("Failed to retrieve monitor from Datadog")
 	}
 	if err != nil {
-		return nil, extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog after 3 attempts. Full response: %v", state.MonitorId, resp), err)
+		return nil, extension_kit.ToError(fmt.Sprintf("Failed to retrieve monitor %d from Datadog after %d attempts. Full response: %v", state.MonitorId, getMonitorAttempts, resp), err)
 	}
 
 	completed := now.After(state.End)

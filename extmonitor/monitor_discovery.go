@@ -19,6 +19,11 @@ import (
 	"github.com/steadybit/extension-kit/extbuild"
 )
 
+// discoveryRefreshTimeout bounds a whole discovery run (which pages through all monitors) so a
+// hanging Datadog API cannot stall the refresh loop and leave the cache stale forever. It stays
+// below the refresh interval so a timed out run does not overlap with the next one.
+const discoveryRefreshTimeout = 50 * time.Second
+
 type monitorDiscovery struct {
 }
 
@@ -30,6 +35,9 @@ var (
 func NewMonitorDiscovery() discovery_kit_sdk.TargetDiscovery {
 	discovery := &monitorDiscovery{}
 	return discovery_kit_sdk.NewCachedTargetDiscovery(discovery,
+		// Must come first: it decorates the supplier, whereas WithRefreshTargetsNow already starts
+		// a refresh while the options are still being applied.
+		discovery_kit_sdk.WithTargetsRefreshTimeout(discoveryRefreshTimeout),
 		discovery_kit_sdk.WithRefreshTargetsNow(),
 		discovery_kit_sdk.WithRefreshTargetsInterval(context.Background(), 1*time.Minute),
 	)

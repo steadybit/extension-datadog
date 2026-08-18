@@ -16,6 +16,7 @@ Learn about the capabilities of this extension in our [Reliability Hub](https://
 | `STEADYBIT_EXTENSION_SITE_URL`                              | `datadog.siteUrl`                       | [Datadog Site Url](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)                           | yes      |         |
 | `HTTPS_PROXY`                                               | via extraEnv variables                  | Configure the proxy to be used for Datadog communication.                                                              | no       |         |
 | `STEADYBIT_EXTENSION_DISCOVERY_ATTRIBUTES_EXCLUDES_MONITOR` | `discovery.attributes.excludes.monitor` | List of Target Attributes which will be excluded during discovery. Checked by key equality and supporting trailing "*" | false    |         |
+| `STEADYBIT_EXTENSION_API_TIMEOUT`                           | via extraEnv variables                  | Timeout for a single request to the Datadog API, e.g. `10s`.                                                           | no       | `10s`   |
 
 Beyond the settings above, this extension supports the configuration common to all Steadybit
 extensions:
