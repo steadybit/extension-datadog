@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.8.27
+
+- build(deps): bump github.com/stretchr/testify from 1.11.1 to 1.12.0
+- chore(deps): bump steadybit kits and drop Go patch pin (#230)
+- chore(deps): pin goreleaser build toolchain to go1.26.6
+- chore(deps): use go-version-file, drop patch pin (go 1.26) (#229)
+
 ## v1.8.26
 
 - build(deps): bump github.com/DataDog/datadog-api-client-go/v2
