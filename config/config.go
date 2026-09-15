@@ -4,6 +4,8 @@
 package config
 
 import (
+	"strings"
+
 	"context"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rs/zerolog/log"
@@ -21,6 +23,22 @@ func ParseConfiguration() {
 }
 
 func ValidateConfiguration() {
+	// envconfig's `required:"true"` only checks that the variable is *set*: an empty
+	// value satisfies it, so the extension would start with a blank configuration and
+	// fail much later against the target system. Reject blank values here instead.
+	if strings.TrimSpace(Config.SiteParameter) == "" {
+		log.Fatal().Msg("STEADYBIT_EXTENSION_SITE_PARAMETER must not be empty.")
+	}
+	if strings.TrimSpace(Config.SiteUrl) == "" {
+		log.Fatal().Msg("STEADYBIT_EXTENSION_SITE_URL must not be empty.")
+	}
+	if strings.TrimSpace(Config.ApiKey) == "" {
+		log.Fatal().Msg("STEADYBIT_EXTENSION_API_KEY must not be empty.")
+	}
+	if strings.TrimSpace(Config.ApplicationKey) == "" {
+		log.Fatal().Msg("STEADYBIT_EXTENSION_APPLICATION_KEY must not be empty.")
+	}
+
 	resp, r, err := Config.ValidateCredentials(context.Background())
 
 	if err != nil {

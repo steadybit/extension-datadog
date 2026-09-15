@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: refuse to start when a required parameter is set but empty
+
 ## v1.8.30
 
 - build(deps): bump github.com/DataDog/datadog-api-client-go/v2
