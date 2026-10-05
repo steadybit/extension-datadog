@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.33
+
+- build(deps): bump github.com/DataDog/datadog-api-client-go/v2
+- build(deps): bump github.com/steadybit/action-kit/go/action_kit_test
+
 ## v1.8.32
 
 - build(deps): bump goreleaser/goreleaser from v2.18.1 to v2.18.2
