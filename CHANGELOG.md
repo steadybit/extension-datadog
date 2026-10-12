@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.34
+
+- chore(deps): bump golang.org/x/net to v0.61.0
+- chore(deps): update go toolchain to 1.27.2
+
 ## v1.8.33
 
 - build(deps): bump github.com/DataDog/datadog-api-client-go/v2
