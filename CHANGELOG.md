@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.36
+
+- build(deps): bump github.com/DataDog/datadog-api-client-go/v2
+- build(docker): build with golang:1.27-alpine to pick up Go patch releases
+
 ## v1.8.35
 
 - build(deps): bump goreleaser/goreleaser from v2.18.2 to v2.18.3
