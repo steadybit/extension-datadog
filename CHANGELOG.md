@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.8.37
+
+- build(deps): bump github.com/KimMachineGun/automemlimit
+- build(deps): bump github.com/steadybit/action-kit/go/action_kit_test
+- build(deps): bump github.com/steadybit/extension-kit
+
 ## v1.8.36
 
 - build(deps): bump github.com/DataDog/datadog-api-client-go/v2
