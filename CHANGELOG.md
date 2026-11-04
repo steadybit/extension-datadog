@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: The monitor status check shows Fail early with the other check settings and its Multi Alert Filter in a "Multi Alert" group
+
 ## v1.8.37
 
 - build(deps): bump github.com/KimMachineGun/automemlimit
