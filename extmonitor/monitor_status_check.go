@@ -58,6 +58,8 @@ func (m *MonitorStatusCheckAction) NewEmptyState() MonitorStatusCheckState {
 	return MonitorStatusCheckState{}
 }
 
+const groupMultiAlert = "Multi Alert"
+
 func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          fmt.Sprintf("%s.status_check", monitorTargetId),
@@ -79,6 +81,9 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 
 		Kind:        action_kit_api.Check,
 		TimeControl: action_kit_api.TimeControlInternal,
+		ParameterGroups: new([]action_kit_api.ParameterGroup{
+			{Name: groupMultiAlert, Description: "Only for monitors with multi alert aggregation. Leave unchanged to consider all groups."},
+		}),
 		Parameters: []action_kit_api.ActionParameter{
 			{
 				Name:         "duration",
@@ -193,6 +198,7 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Type:        action_kit_api.ActionParameterTypeKeyValue,
 				Required:    new(false),
 				Advanced:    new(true),
+				Group:       new(groupMultiAlert),
 				Order:       new(6),
 			},
 			{
