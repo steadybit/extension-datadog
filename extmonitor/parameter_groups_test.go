@@ -32,13 +32,16 @@ func TestParameterGroups(t *testing.T) {
 
 func TestMultiAlertGroup(t *testing.T) {
 	desc := NewMonitorStatusCheckAction().Describe()
+	found := false
 	for _, p := range desc.Parameters {
 		if p.Name == "multiAlertFilter" {
+			found = true
 			assert.Equal(t, groupMultiAlert, *p.Group)
 			// Platforms without groups keep showing it in "Additional Settings".
 			assert.True(t, *p.Advanced)
 		}
 	}
+	assert.True(t, found, "multiAlertFilter parameter")
 	assert.Equal(t, []string{groupMultiAlert}, []string{(*desc.ParameterGroups)[0].Name})
 	assert.Len(t, *desc.ParameterGroups, 1)
 }
