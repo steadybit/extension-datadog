@@ -58,6 +58,8 @@ func (m *MonitorStatusCheckAction) NewEmptyState() MonitorStatusCheckState {
 	return MonitorStatusCheckState{}
 }
 
+const groupMultiAlert = "Multi Alert"
+
 func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          fmt.Sprintf("%s.status_check", monitorTargetId),
@@ -79,6 +81,9 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 
 		Kind:        action_kit_api.Check,
 		TimeControl: action_kit_api.TimeControlInternal,
+		ParameterGroups: new([]action_kit_api.ParameterGroup{
+			{Name: groupMultiAlert, Description: "Only for monitors with multi alert aggregation. Leave unchanged to consider all groups."},
+		}),
 		Parameters: []action_kit_api.ActionParameter{
 			{
 				Name:         "duration",
@@ -193,7 +198,8 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Type:        action_kit_api.ActionParameterTypeKeyValue,
 				Required:    new(false),
 				Advanced:    new(true),
-				Order:       new(5),
+				Group:       new(groupMultiAlert),
+				Order:       new(6),
 			},
 			{
 				Name:         "failEarly",
@@ -201,9 +207,8 @@ func (m *MonitorStatusCheckAction) Describe() action_kit_api.ActionDescription {
 				Description:  new("If enabled, the check fails as soon as a deviating status is observed. If disabled, the check keeps collecting events for the whole duration and only fails at the end of the step. Only affects the 'All the time' mode; 'At least once' can only be evaluated at the end of the step."),
 				Type:         action_kit_api.ActionParameterTypeBoolean,
 				DefaultValue: new("true"),
-				Advanced:     new(true),
 				Required:     new(false),
-				Order:        new(6),
+				Order:        new(5),
 			},
 		},
 		Widgets: new([]action_kit_api.Widget{
