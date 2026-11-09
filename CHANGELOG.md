@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(chart): raise default memory to 32Mi request / 64Mi limit (was 16Mi / 32Mi), to leave room for large monitor lists
 - feat: The monitor status check shows Fail early with the other check settings and its Multi Alert Filter in a "Multi Alert" group
 
 ## v1.8.37
