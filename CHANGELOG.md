@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## v1.9.0
 
-- fix(chart): raise default memory to 32Mi request / 64Mi limit (was 16Mi / 32Mi), to leave room for large monitor lists
+- build(deps): bump the steadybit group with 2 updates
+- chore(deps): bump golang.org/x/net to v0.62.0
 - feat: The monitor status check shows Fail early with the other check settings and its Multi Alert Filter in a "Multi Alert" group
+- feat: show Fail early with the other check settings
+- feat: show the Multi Alert Filter in a Multi Alert group
+- fix(chart): raise default memory to 32Mi request / 64Mi limit (#253)
+- fix(chart): raise default memory to 32Mi request / 64Mi limit (was 16Mi / 32Mi), to leave room for large monitor lists
 
 ## v1.8.37
 
